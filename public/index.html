@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0c101a">
+  <title>Night City | Home</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">APARTMENT / CONTROL SYSTEM</p>
+        <h1>NIGHT <span>CITY</span><b class="cursor">_</b></h1>
+        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.1</p>
+      </div>
+      <div class="topright">
+        <div class="mode" id="mode">CONNECTING</div>
+        <div class="clock" id="clock">--:--</div>
+      </div>
+    </header>
+
+    <div class="statusbar" id="statusbar">Connecting to Home Assistant…</div>
+
+    <div class="section-heading"><span class="section-number">01</span> CONTROL ZONES <span class="line"></span></div>
+    <main class="cards">
+      <section class="card light-card">
+        <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
+        <h2 id="light-name">Gaming room</h2>
+        <p class="secondary" id="light-state">Loading…</p>
+        <div class="actions light-actions">
+          <button id="light-on" type="button">ON</button>
+          <button id="light-off" type="button" class="subtle">OFF</button>
+        </div>
+        <div class="range-row"><span>BRIGHTNESS</span><strong id="brightness-value">--%</strong></div>
+        <input type="range" id="brightness" min="1" max="100" step="1" value="25" aria-label="Light brightness">
+      </section>
+
+      <section class="card scene-card">
+        <div class="card-top"><span class="card-label">PRESET / MOOD</span><span class="square-mark">◆</span></div>
+        <div class="ambient-orb"></div>
+        <h2>NEO-NOIR</h2>
+        <p class="secondary">Warm amber / evening scene</p>
+        <button class="accent full" id="scene-activate" type="button">ACTIVATE SCENE</button>
+        <p class="micro" id="scene-state">Saved in Home Assistant</p>
+      </section>
+
+      <section class="card vacuum-card">
+        <div class="card-top"><span class="card-label">APARTMENT / CLEANING</span><span class="dot blue" id="vacuum-dot"></span></div>
+        <h2>DREAME L50S</h2>
+        <p class="secondary">Pro Ultra / Robot vacuum</p>
+        <div class="info-pair"><span>STATUS</span><strong id="vacuum-state">Loading…</strong></div>
+        <div class="info-pair"><span>BATTERY</span><strong id="vacuum-battery">--</strong></div>
+        <div class="actions vacuum-actions">
+          <button type="button" id="vacuum-start">START</button>
+          <button type="button" id="vacuum-pause" class="subtle">PAUSE</button>
+          <button type="button" id="vacuum-dock" class="subtle">DOCK</button>
+        </div>
+      </section>
+
+      <section class="card system-card">
+        <div class="card-top"><span class="card-label">SYSTEM / CONNECTIVITY</span><span class="square-mark teal">+</span></div>
+        <h2>HOME ASSISTANT</h2>
+        <p class="secondary">Zigbee2MQTT + local dashboard</p>
+        <div class="info-pair"><span>CONTROLLER</span><strong>SONOFF ZBDongle-P</strong></div>
+        <div class="info-pair"><span>SMART HOME API</span><strong id="ha-status">WAITING</strong></div>
+        <p class="future">NEXT MODULES: WLED · JELLYFIN · PROXMOX</p>
+      </section>
+    </main>
+
+    <footer><span>NIGHT CITY CONTROL // LOCAL NETWORK ONLY</span><span id="last-update">LAST SYNC --:--</span></footer>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

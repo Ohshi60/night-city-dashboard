@@ -1,0 +1,12 @@
+services:
+  night-city:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3080:3080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
