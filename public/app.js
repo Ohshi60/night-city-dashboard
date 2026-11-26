@@ -82,8 +82,20 @@
 
     var box = clear(el('scenes'));
     data.scenes.forEach(function (scene) {
-      if (scene.id === data.activeScene) active = scene;
-      var button = make('button', scene.id === data.activeScene ? 'active' : '', scene.name.toUpperCase());
+      var isActive = scene.id === data.activeScene;
+      if (isActive) active = scene;
+      var button = make('button', isActive ? 'active' : '');
+      if (scene.color) {
+        var swatch = make('i', 'swatch');
+        swatch.style.background = scene.color;
+        swatch.style.boxShadow = '0 0 6px ' + scene.color;
+        button.appendChild(swatch);
+        if (isActive) {
+          button.style.borderColor = scene.color;
+          button.style.boxShadow = '0 0 12px ' + scene.color;
+        }
+      }
+      button.appendChild(document.createTextNode(scene.name.toUpperCase()));
       button.type = 'button';
       button.disabled = !scene.available;
       button.onclick = function () { action('scene.activate', { scene: scene.id }); };
@@ -103,6 +115,14 @@
 
     el('lights-off').disabled = !anyOn;
     el('light-dot').className = 'dot' + (anyOn ? ' active' : '');
+
+    // The orb glows in the real colour of the first light that is on; dark when all are off.
+    var glow = null;
+    data.lights.forEach(function (light) { if (!glow && light.on && light.color) glow = light.color; });
+    var orb = el('light-orb');
+    orb.style.background = glow || '#1d1925';
+    orb.style.boxShadow = glow ? '0 0 40px 14px ' + glow : 'none';
+    orb.style.opacity = glow ? '0.55' : '0.6';
     text('scene-note', active ? active.name + ' since ' + when(data.activeSince) : anyOn ? 'Pick a scene' : 'Lights are off');
   }
 
@@ -116,6 +136,7 @@
       text('media-title', 'Nothing playing');
       text('media-sub', 'The TV is off');
       text('media-meta', '');
+      text('media-device', '');
       show('media-art', false);
       renderProgress();
       return;
@@ -124,6 +145,7 @@
     text('media-title', m.title || m.app || 'TV is on');
     text('media-sub', m.title ? (m.subtitle || '') : (m.app ? 'App open' : ''));
     text('media-meta', (m.title && m.app ? m.app + ' · ' : '') + stateName + ' · ' + m.device);
+    text('media-device', 'On ' + m.device);
 
     if (m.artwork) {
       var src = '/api/media/artwork?entity=' + encodeURIComponent(m.id) + '&v=' + m.artwork;
@@ -211,8 +233,11 @@
     show('energy-card', visible);
     if (!visible || !changed('energy', e)) return;
 
-    text('energy-now', kr(e.current.price, e.unit));
+    var now = clear(el('energy-now'));
+    now.appendChild(document.createTextNode(e.current.price.toFixed(2) + ' '));
+    now.appendChild(make('small', null, e.unit));
     text('energy-level', LEVEL_TEXT[e.current.level]);
+    el('energy-level').className = 'level level-' + e.current.level;
     el('energy-dot').className = 'dot' + (e.current.level === 'expensive' ? ' active' : '');
 
     var advice = clear(el('energy-advice'));
@@ -270,7 +295,7 @@
 
     text('vacuum-name', v.name.toUpperCase());
     text('vacuum-state', v.state + (v.detail ? ' · ' + v.detail : ''));
-    text('vacuum-battery', v.battery === null ? 'NOT REPORTED' : v.battery + '%');
+    text('vacuum-battery', v.battery === null ? '--' : v.battery + '%');
     el('vacuum-dot').className = 'dot blue' + (v.available ? ' active' : '');
 
     var attention = clear(el('vacuum-attention'));
@@ -284,6 +309,7 @@
 
     var run = clear(el('vacuum-run'));
     var r = v.lastRun;
+    text('vacuum-run-short', r ? 'Last run ' + when(r.timestamp) + ' · ' + (r.completed ? 'finished' : "didn't finish") : 'No cleaning runs yet');
     if (!r) run.appendChild(make('p', 'run-line', 'No cleaning runs yet.'));
     else {
       run.appendChild(make('p', 'run-when', when(r.timestamp)));
@@ -323,6 +349,8 @@
       photoRun = runKey;
       var strip = clear(el('photo-strip'));
       show('photo-section', data.photos.length > 0);
+      show('vacuum-pets', data.photos.length > 0);
+      text('vacuum-pets', '🐾 Pet spotted on the last run');
       text('photo-count', data.photos.length + (data.photos.length === 1 ? ' PHOTO' : ' PHOTOS'));
       data.photos.forEach(function (p) {
         var src = '/api/vacuum/photos/' + p.index + '?v=' + encodeURIComponent(data.version);
@@ -347,15 +375,116 @@
   }
   el('viewer').onclick = function () { show('viewer', false); };
 
+  // ---- Details sheet ------------------------------------------------------------
+  // The card's .detail block is moved into the sheet while it is open and moved back after,
+  // so the render functions keep updating the same elements wherever they are.
+
+  var SHEET_IDLE_MS = 60000; // a wall display should drift back to the overview
+  var openSheet = null;
+  var sheetTimer = null;
+
+  function resetSheetTimer() {
+    clearTimeout(sheetTimer);
+    sheetTimer = setTimeout(closeDetail, SHEET_IDLE_MS);
+  }
+
+  function openDetail(card) {
+    closeDetail();
+    var detail = el(card.getAttribute('data-detail'));
+    var accent = (/accent-\w+/.exec(card.className) || [''])[0];
+    openSheet = { card: card, detail: detail };
+    el('sheet-body').appendChild(detail);
+    show(detail.id, true);
+    text('sheet-title', card.getAttribute('data-title'));
+    el('sheet-panel').className = 'sheet ' + accent;
+    show('sheet', true);
+    resetSheetTimer();
+  }
+
+  function closeDetail() {
+    clearTimeout(sheetTimer);
+    if (!openSheet) return;
+    show(openSheet.detail.id, false);
+    openSheet.card.appendChild(openSheet.detail);
+    openSheet = null;
+    show('sheet', false);
+  }
+
+  // A tap on a card opens its details, unless the tap was on one of the card's own buttons.
+  function insideButton(node, card) {
+    for (; node && node !== card; node = node.parentNode) {
+      if (node.tagName === 'BUTTON') return true;
+    }
+    return false;
+  }
+  var tappable = document.querySelectorAll('[data-detail]');
+  for (var t = 0; t < tappable.length; t++) {
+    (function (card) {
+      card.onclick = function (event) {
+        if (!insideButton(event.target, card)) openDetail(card);
+      };
+    }(tappable[t]));
+  }
+  el('sheet-close').onclick = closeDetail;
+  el('sheet').onclick = function (event) {
+    if (event.target === el('sheet')) closeDetail(); // tap on the dimmed area outside the panel
+    else resetSheetTimer();
+  };
+
+  // ---- Night mode & summary line ------------------------------------------------
+
+  // ?theme=night or ?theme=day forces a theme (handy for previewing); otherwise follow the sun.
+  var forcedTheme = (/[?&]theme=(day|night)/.exec(window.location.search) || [])[1] || null;
+
+  function applyTheme(state) {
+    var night;
+    if (forcedTheme) night = forcedTheme === 'night';
+    else if (state.weather && state.weather.available) night = !state.weather.sunUp;
+    else { var h = new Date().getHours(); night = h >= 22 || h < 7; }
+    document.body.className = night ? 'night' : '';
+  }
+
+  // "Power is cheap until 06:00": how long the current price level lasts.
+  function powerPhrase(e) {
+    var level = e.current.level;
+    var change = null;
+    for (var i = 1; i < e.slots.length; i++) {
+      if (e.slots[i].level !== level) { change = e.slots[i]; break; }
+    }
+    if (level === 'normal') {
+      for (var j = 1; j < e.slots.length; j++) {
+        if (e.slots[j].level === 'cheap') return 'power gets cheap at ' + hm(new Date(e.slots[j].start));
+      }
+      return 'normal power prices';
+    }
+    return 'power is ' + level + (change ? ' until ' + hm(new Date(change.start)) : '');
+  }
+
+  function summary(state) {
+    var h = new Date().getHours();
+    var parts = [h >= 5 && h < 11 ? 'Good morning' : h >= 11 && h < 17 ? 'Good afternoon' : h >= 17 && h < 23 ? 'Good evening' : 'Good night'];
+    var w = state.weather;
+    if (w && w.available && w.temperature !== null) {
+      var weather = degrees(w.temperature);
+      if (w.rain && w.rain.from === null) weather += ', raining' + (w.rain.to !== null ? ' until ' + hm(new Date(w.rain.to)) : '');
+      else if (w.rain) weather += ', rain from ' + hm(new Date(w.rain.from));
+      else if (w.outlookHours) weather += ' and dry';
+      else weather += ' and ' + w.condition.toLowerCase();
+      parts.push(weather);
+    }
+    if (state.energy && state.energy.available) parts.push(powerPhrase(state.energy));
+    var v = state.vacuum;
+    if (v && v.attention.length) parts.push(v.name + ': ' + v.attention[0].charAt(0).toLowerCase() + v.attention[0].slice(1));
+    if (state.mode === 'demo') parts.push('demo data');
+    return parts.join(' · ');
+  }
+
   // ---- Polling & actions --------------------------------------------------------
 
   function render(state) {
     text('mode', state.mode === 'demo' ? 'DEMO MODE' : 'LIVE SYSTEM');
-    if (!busy) {
-      setStatus(state.mode === 'demo'
-        ? 'Preview data only — no real devices are being controlled.'
-        : 'Connected to Home Assistant. Controls are live.', false);
-    }
+    applyTheme(state);
+    if (!busy) setStatus(summary(state), false);
     renderLights(state.lights);
     renderMedia(state.media);
     renderWeather(state.weather);

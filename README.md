@@ -57,4 +57,6 @@ curl http://localhost:3080/api/entities
 - Home Assistant integration calls go through Fastify on the server. The browser doesn't receive HA credentials.
 - No arbitrary HA service calls are exposed. Only a small list of permitted actions is mapped by the server.
 - Commands are submitted over HTTP on LAN. No login exists in MVP. Use a separate HA account for the dashboard token if you want to manage permissions separately, though Home Assistant service access should still be considered powerful.
-- Next upgrades: weekday commute traffic, and a layout pass.
+- The overview is sized to fit one first-gen iPad mini screen in landscape (about 1024×690 in Safari). Tapping a card opens its details in a panel that closes itself after a minute.
+- From sunset to sunrise the page switches to a dim, warm night mode. Add `?theme=day` or `?theme=night` to the URL to force one.
+- Next upgrades: weekday commute traffic.

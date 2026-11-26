@@ -4,7 +4,7 @@ const Fastify = require('fastify');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ha, haBinary } = require('./ha');
-const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary } = require('./summaries');
+const { entityMap, sceneColor, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary } = require('./summaries');
 const mock = require('./mock');
 
 const app = Fastify({ logger: true });
@@ -30,6 +30,26 @@ const demoStates = demo ? mock.createStates(config.vacuum) : null;
 
 async function loadStates() {
   return entityMap(demo ? demoStates : await ha('/api/states'));
+}
+
+// Scene states don't include colours; each UI-made scene's config does. Scenes rarely change: cache.
+const SCENE_COLOR_TTL_MS = 10 * 60000;
+let sceneColorCache = { at: 0, colors: {} };
+
+async function loadSceneColors(map, log) {
+  if (demo) return mock.sceneColors();
+  if (Date.now() - sceneColorCache.at < SCENE_COLOR_TTL_MS) return sceneColorCache.colors;
+  const colors = {};
+  const scenes = Object.keys(map).filter((id) => id.startsWith('scene.') && map[id].attributes && map[id].attributes.id);
+  await Promise.all(scenes.map(async (id) => {
+    try {
+      colors[id] = sceneColor(await ha('/api/config/scene/config/' + encodeURIComponent(map[id].attributes.id)));
+    } catch (error) {
+      log.warn({ err: error }, 'Could not load scene config for ' + id); // the dot is just left out
+    }
+  }));
+  sceneColorCache = { at: Date.now(), colors };
+  return colors;
 }
 
 // The hourly forecast is not a state attribute in modern HA; it comes from a service call.
@@ -116,7 +136,7 @@ app.get('/api/state', async (request, reply) => {
     return {
       mode: demo ? 'demo' : 'live',
       weather: weatherSummary(map, config.weather, forecast, Date.now()),
-      lights: lightsSummary(map, config.scenes),
+      lights: lightsSummary(map, config.scenes, await loadSceneColors(map, request.log)),
       vacuum: config.vacuum ? vacuumSummary(map, config.vacuum, config.battery) : null,
       media: mediaSummary(map, config.mediaPlayers),
       energy: energySummary(map, config.prices, config.appliances, Date.now())
