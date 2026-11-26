@@ -173,9 +173,12 @@ app.post('/api/action', {
   }
 });
 
-if (!demo && !process.env.HA_TOKEN) {
-  console.error('Missing HA_TOKEN. Set it in .env, or set DEMO_MODE=true.');
-  process.exit(1);
+if (!demo) {
+  const missing = ['HA_URL', 'HA_TOKEN'].filter((name) => !(process.env[name] || '').trim());
+  if (missing.length) {
+    console.error('Missing ' + missing.join(', ') + '. Set in the environment (or .env), or set DEMO_MODE=true.');
+    process.exit(1);
+  }
 }
 
 app.listen({ port, host: '0.0.0.0' }).catch((error) => {

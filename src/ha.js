@@ -1,6 +1,8 @@
 'use strict';
 
-const HA_URL = (process.env.HA_URL || 'http://10.0.0.169:8123').replace(/\/$/, '');
+// Base URL including port, e.g. http://10.0.0.169 or http://homeassistant.local:8123.
+// Required in live mode; server.js refuses to start without it.
+const HA_URL = (process.env.HA_URL || '').trim().replace(/\/+$/, '');
 const HA_TOKEN = process.env.HA_TOKEN || '';
 
 async function ha(path, method, payload) {
