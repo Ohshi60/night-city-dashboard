@@ -47,6 +47,21 @@
         <p class="micro" id="media-time"></p>
       </section>
 
+      <section class="card wide energy-card is-hidden" id="energy-card">
+        <div class="card-top"><span class="card-label">ELECTRICITY / PRICE PER kWh</span><span class="dot" id="energy-dot"></span></div>
+        <div class="col">
+          <h2 id="energy-now">--</h2>
+          <p class="secondary" id="energy-level"></p>
+          <p class="subhead">BEST TIME TO START</p>
+          <div id="energy-advice"></div>
+          <p class="micro" id="energy-note"></p>
+        </div><div class="col">
+          <div class="chart" id="energy-chart" role="img" aria-label="Electricity price for the coming hours"></div>
+          <div class="chart-axis" id="energy-axis"></div>
+          <p class="micro" id="energy-readout">Tap a bar to see its price.</p>
+        </div>
+      </section>
+
       <section class="card wide vacuum-card is-hidden" id="vacuum-card">
         <div class="card-top"><span class="card-label">APARTMENT / CLEANING</span><span class="dot blue" id="vacuum-dot"></span></div>
         <div class="col">

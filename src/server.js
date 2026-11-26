@@ -4,7 +4,7 @@ const Fastify = require('fastify');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ha, haBinary } = require('./ha');
-const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary } = require('./summaries');
+const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary } = require('./summaries');
 const mock = require('./mock');
 
 const app = Fastify({ logger: true });
@@ -15,7 +15,15 @@ const config = {
   scenes: list(process.env.SCENE_ENTITY_IDS), // empty = every scene in HA
   mediaPlayers: list(process.env.MEDIA_PLAYER_ENTITY_IDS), // empty = every media player in HA
   vacuum: (process.env.VACUUM_ENTITY_ID || '').trim() || (demo ? 'vacuum.ottoto' : ''),
-  battery: (process.env.VACUUM_BATTERY_ENTITY_ID || '').trim()
+  battery: (process.env.VACUUM_BATTERY_ENTITY_ID || '').trim(),
+  prices: (process.env.PRICE_ENTITY_ID || 'sensor.energi_data_service').trim(),
+  // "Name:minutes,Name:minutes": appliances to find the cheapest start time for.
+  appliances: list(process.env.APPLIANCES || 'Washing machine:120,Dishwasher:180')
+    .map((item) => {
+      const i = item.lastIndexOf(':');
+      return { name: item.slice(0, i).trim(), minutes: Number(item.slice(i + 1)) };
+    })
+    .filter((item) => item.name && item.minutes > 0)
 };
 const demoStates = demo ? mock.createStates(config.vacuum) : null;
 
@@ -87,7 +95,8 @@ app.get('/api/state', async (request, reply) => {
       mode: demo ? 'demo' : 'live',
       lights: lightsSummary(map, config.scenes),
       vacuum: config.vacuum ? vacuumSummary(map, config.vacuum, config.battery) : null,
-      media: mediaSummary(map, config.mediaPlayers)
+      media: mediaSummary(map, config.mediaPlayers),
+      energy: energySummary(map, config.prices, config.appliances, Date.now())
     };
   } catch (error) {
     return haUnreachable(request, reply, error, 'state');
