@@ -1,4 +1,4 @@
-/* Deliberately old-Safari-friendly: no CSS variables, grid, animations or web fonts. */
+/* Deliberately old-Safari-friendly: no CSS variables, grid, flexbox, animations or web fonts. */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; min-height: 100%; background: #0b101a; color: #eef2f8; font: 16px/1.45 'Helvetica Neue', Arial, sans-serif; }
@@ -18,44 +18,82 @@ h1 span { color: #edae77; }
 .section-heading { margin: 20px 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #c5cdd7; }
 .section-number { color: #e9ad77; margin-right: 10px; }
 .line { display: inline-block; border-top: 1px solid #334052; width: 40%; vertical-align: middle; margin-left: 12px; }
+
 .cards { font-size: 0; margin: 0 -7px; }
 .card { position: relative; display: inline-block; vertical-align: top; width: 48%; width: calc(50% - 14px); margin: 0 7px 14px; min-height: 225px; padding: 19px 21px; background: #1a2230; border: 1px solid #323f4e; border-radius: 10px; font-size: 14px; overflow: hidden; }
+.card.wide { width: 97%; width: calc(100% - 14px); }
 .card-top { display: table; width: 100%; margin-bottom: 17px; }
 .card-top > span { display: table-cell; }
 .card-label { color: #aab5c1; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
 .dot { display: block !important; margin-left: auto; margin-top: 4px; width: 8px; height: 8px; background: #536174; border-radius: 50%; }
 .dot.active { background: #f3a75e; box-shadow: 0 0 9px #ee9b40; }
 .dot.blue.active { background: #67becf; box-shadow: 0 0 9px #67becf; }
-.square-mark { color: #d2a26f; font-size: 17px; text-align: right; }
-.square-mark.teal { color: #60b5bb; }
 h2 { position: relative; font-size: 20px; font-weight: 700; margin: 0 0 2px; letter-spacing: 0.3px; }
 .secondary { margin: 0; color: #a2b0c0; font-size: 12px; }
-.actions { margin-top: 24px; }
+.micro { font-size: 11px; color: #c2b2b7; margin: 9px 0 0; }
+.subhead { margin: 18px 0 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #8fa0b3; }
+.subhead span { color: #62b3ba; margin-left: 6px; }
+/* The CSP (default-src 'self') blocks inline style="" attributes, so hide things with this class. */
+.is-hidden { display: none !important; }
+.muted { color: #6f7d8f !important; }
+.warn { color: #f0b37a !important; }
+.ok { color: #79d3b2 !important; }
+
 button { min-height: 44px; -webkit-appearance: none; appearance: none; border: 1px solid #ad744c; color: #fff1e4; background: #67432e; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 1px; cursor: pointer; padding: 0 18px; touch-action: manipulation; }
 button:active { background: #94603e; }
 button.subtle { background: #2a3544; color: #d0d9e5; border-color: #405167; }
 button:disabled { opacity: .4; cursor: not-allowed; }
 button.full { width: 100%; }
-button.accent { background: #9f6541; border-color: #d69566; }
-.light-actions button { min-width: 98px; margin-right: 10px; }
-.range-row { display: table; width: 100%; margin: 16px 0 6px; font-size: 10px; letter-spacing: 1.2px; color: #adb7c6; }
-.range-row > * { display: table-cell; }
-.range-row strong { text-align: right; color: #ecc099; font-size: 12px; }
-input[type=range] { display: block; width: 100%; accent-color: #e6a66c; height: 20px; margin: 0; }
-.scene-card { background: #272332; border-color: #49384a; }
-.ambient-orb { position: absolute; right: 24px; top: 51px; width: 90px; height: 90px; border-radius: 50%; background: #7d482f; box-shadow: 0 0 30px 18px rgba(171,99,52,.16); opacity: .8; }
-.scene-card h2, .scene-card p, .scene-card button { position: relative; }
-.scene-card .actions { margin-top: 30px; }
-.scene-card button { margin-top: 25px; }
-.micro { font-size: 11px; color: #c2b2b7; margin: 9px 0 0; }
+
 .info-pair { display: table; width: 100%; border-bottom: 1px solid #344053; padding: 10px 0; font-size: 11px; }
 .info-pair > * { display: table-cell; }
 .info-pair > span { color: #99a8ba; letter-spacing: 1px; }
 .info-pair strong { text-align: right; font-size: 12px; font-weight: 600; color: #e0e6ef; }
-.vacuum-actions { margin-top: 17px; white-space: nowrap; }
-.vacuum-actions button { width: 30%; margin-right: 3%; padding: 0 5px; }
-.vacuum-actions button:last-child { margin-right: 0; }
-.future { margin-top: 30px; color: #62b3ba; font-size: 10px; letter-spacing: 1px; }
+
+/* Lights / scenes */
+.scene-card { background: #272332; border-color: #49384a; }
+.ambient-orb { position: absolute; right: 24px; top: 51px; width: 90px; height: 90px; border-radius: 50%; background: #7d482f; box-shadow: 0 0 30px 18px rgba(171,99,52,.16); opacity: .8; }
+.scene-card h2, .scene-card p, .scene-card div, .scene-card button { position: relative; }
+.scene-buttons { margin: 18px -4px 8px; font-size: 0; }
+.scene-buttons button { display: inline-block; width: 31%; width: calc(33.33% - 8px); margin: 0 4px 8px; padding: 0 6px; font-size: 12px; background: #3a2c34; border-color: #6b4c58; }
+.scene-buttons button.active { background: #9f6541; border-color: #f0b37a; box-shadow: 0 0 12px rgba(240,179,122,.35); }
+.light-list { margin-top: 10px; }
+
+/* Media */
+.media-card { background: #1a2433; }
+.media-art { float: right; width: 92px; max-height: 138px; margin: 0 0 8px 14px; border-radius: 6px; border: 1px solid #334052; }
+.progress { clear: both; height: 4px; margin-top: 16px; background: #2c394a; border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 4px; width: 0; background: #67becf; }
+
+/* Vacuum */
+.vacuum-card .col { display: inline-block; vertical-align: top; width: 50%; padding-right: 22px; }
+.vacuum-card .col + .col { padding-right: 0; padding-left: 22px; border-left: 1px solid #2c3848; }
+.attention { margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.attention li { padding: 3px 0; color: #f0b37a; }
+.attention li.ok { color: #79d3b2; }
+.chips { margin-top: 10px; font-size: 0; }
+.chip { display: inline-block; margin: 0 6px 6px 0; padding: 3px 8px; border-radius: 10px; font-size: 11px; border: 1px solid #3c5a57; color: #9fd8c4; }
+.chip.bad { border-color: #8a5a3c; color: #f0b37a; }
+.run-when { font-size: 15px; font-weight: 700; margin: 0; }
+.run-result { margin: 2px 0 6px; font-size: 13px; }
+.run-line { margin: 3px 0; font-size: 12px; color: #c9d2dd; }
+.part { display: table; width: 100%; font-size: 11px; padding: 4px 0; }
+.part > * { display: table-cell; vertical-align: middle; }
+.part-name { width: 34%; color: #99a8ba; }
+.part-pct { width: 15%; text-align: right; color: #e0e6ef; }
+.bar { height: 5px; background: #2c394a; border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 5px; background: #67becf; }
+.bar-fill.low { background: #f0b37a; }
+.photo-section { clear: both; margin-top: 8px; border-top: 1px solid #2c3848; }
+.photo-strip { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 6px; }
+.photo { display: inline-block; vertical-align: top; width: 150px; min-height: 0; margin-right: 8px; padding: 0; background: #111824; border: 1px solid #334052; border-radius: 6px; overflow: hidden; text-align: left; letter-spacing: 0; font-weight: normal; }
+.photo img { display: block; width: 150px; height: 112px; }
+.photo span { display: block; padding: 5px 7px; font-size: 11px; color: #c9d2dd; white-space: normal; }
+
+.viewer { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 10; background: rgba(5,8,14,.94); text-align: center; padding: 40px 16px; }
+.viewer img { max-width: 100%; max-height: 80%; border-radius: 8px; }
+.viewer p { color: #e0e6ef; font-size: 14px; }
+
 footer { border-top: 1px solid #2a3342; padding-top: 12px; color: #728093; letter-spacing: 1px; font-size: 9px; }
 footer span:last-child { float: right; }
 @media (max-width: 650px) {
@@ -64,6 +102,7 @@ footer span:last-child { float: right; }
   .tagline { letter-spacing: 1px; }
   .topright { width: 100px; }
   .clock { font-size: 20px; }
-  .card { display: block; width: auto; min-height: 0; margin-bottom: 13px; }
+  .card, .card.wide { display: block; width: auto; min-height: 0; margin-bottom: 13px; }
+  .vacuum-card .col, .vacuum-card .col + .col { display: block; width: auto; padding: 0; border: 0; }
   .line { width: 12%; }
 }
