@@ -26,6 +26,26 @@ function priceDay(dayOffset, wiggle) {
   }));
 }
 
+// Next occurrence of a local clock time, as ISO.
+function nextAt(hours, minutes) {
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+
+// Hourly forecast in the shape weather.get_forecasts returns: cold, with rain in 3–5 hours.
+function forecast() {
+  const hour = new Date();
+  hour.setMinutes(0, 0, 0);
+  return Array.from({ length: 24 }, (_, i) => ({
+    datetime: new Date(hour.getTime() + i * 3600000).toISOString(),
+    condition: i >= 3 && i <= 5 ? 'rainy' : 'cloudy',
+    temperature: Math.round((0.4 - 2.5 * Math.sin(i / 4)) * 10) / 10,
+    precipitation: i >= 3 && i <= 5 ? 0.6 : 0
+  }));
+}
+
 function createStates(vacuumId) {
   const base = vacuumId.replace(/^vacuum\./, '');
   const lights = ['light.kontoret_main', 'light.kontoret_wled'];
@@ -68,6 +88,9 @@ function createStates(vacuumId) {
       tomorrow_valid: true, raw_today: priceDay(0, 0), raw_tomorrow: priceDay(1, 0.15)
     }),
 
+    state('weather.home', 'cloudy', { friendly_name: 'Home', temperature: 0.4, wind_speed: 12.6, wind_speed_unit: 'km/h' }),
+    state('sun.sun', 'below_horizon', { next_rising: nextAt(8, 21), next_setting: nextAt(15, 44) }),
+
     state('media_player.living_room_tv', 'on', { friendly_name: 'Living room TV', app_id: 'org.jellyfin.androidtv', device_class: 'tv' }),
     state('media_player.jellyfin_living_room_tv', 'playing', {
       friendly_name: 'Living room TV (Jellyfin)', app_name: 'Jellyfin', media_title: 'Blade Runner 2049',
@@ -100,4 +123,4 @@ function applyAction(states, call) {
   }
 }
 
-module.exports = { createStates, applyAction };
+module.exports = { createStates, applyAction, forecast };

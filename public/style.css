@@ -65,6 +65,21 @@ button.full { width: 100%; }
 .progress { clear: both; height: 4px; margin-top: 16px; background: #2c394a; border-radius: 2px; overflow: hidden; }
 .progress-fill { height: 4px; width: 0; background: #67becf; }
 
+/* Right-hand column holding several short cards next to a tall one. */
+.stack { display: inline-block; vertical-align: top; width: 50%; }
+.stack .card { display: block; width: auto; min-height: 0; }
+
+/* Weather */
+.weather-now { display: table; }
+.weather-now > * { display: table-cell; vertical-align: middle; }
+.weather-icon { font-size: 30px; padding-right: 12px; color: #c9d6e3; }
+.weather-card h2 { font-size: 30px; }
+.weather-line { margin: 6px 0 0; font-size: 13px; color: #d4dce6; }
+.hours { margin-top: 14px; font-size: 0; white-space: nowrap; }
+.hour { display: inline-block; width: 16.66%; text-align: center; font-size: 11px; color: #a2b0c0; }
+.hour b { display: block; font-size: 15px; font-weight: normal; color: #c9d6e3; margin: 2px 0; }
+.hour.wet b { color: #7fc7d6; }
+
 /* Two-column wide cards */
 .card .col { display: inline-block; vertical-align: top; width: 50%; padding-right: 22px; }
 .card .col + .col { padding-right: 0; padding-left: 22px; border-left: 1px solid #2c3848; }
@@ -119,6 +134,7 @@ footer span:last-child { float: right; }
   .topright { width: 100px; }
   .clock { font-size: 20px; }
   .card, .card.wide { display: block; width: auto; min-height: 0; margin-bottom: 13px; }
+  .stack { display: block; width: auto; }
   .card .col, .card .col + .col { display: block; width: auto; padding: 0; border: 0; }
   .energy-card .col + .col { margin-top: 16px; }
   .line { width: 12%; }
