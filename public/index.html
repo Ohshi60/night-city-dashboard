@@ -37,6 +37,7 @@
         <div id="light-list" class="light-list"></div>
       </section>
 
+      <div class="stack">
       <section class="card media-card">
         <div class="card-top"><span class="card-label">NOW PLAYING / LIVING ROOM</span><span class="dot blue" id="media-dot"></span></div>
         <img id="media-art" class="media-art is-hidden" alt="">
@@ -46,6 +47,17 @@
         <div class="progress is-hidden" id="media-progress"><div class="progress-fill" id="media-progress-fill"></div></div>
         <p class="micro" id="media-time"></p>
       </section>
+
+      <section class="card weather-card is-hidden" id="weather-card">
+        <div class="card-top"><span class="card-label">OUTSIDE / TODAY</span><span class="dot blue active"></span></div>
+        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><h2 id="weather-temp">--</h2></div>
+        <p class="secondary" id="weather-summary"></p>
+        <p class="weather-line" id="weather-rain"></p>
+        <p class="weather-line" id="weather-range"></p>
+        <p class="weather-line" id="weather-sun"></p>
+        <div class="hours" id="weather-hours"></div>
+      </section>
+      </div>
 
       <section class="card wide energy-card is-hidden" id="energy-card">
         <div class="card-top"><span class="card-label">ELECTRICITY / PRICE PER kWh</span><span class="dot" id="energy-dot"></span></div>

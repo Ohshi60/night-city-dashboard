@@ -4,7 +4,7 @@ const Fastify = require('fastify');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ha, haBinary } = require('./ha');
-const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary } = require('./summaries');
+const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary } = require('./summaries');
 const mock = require('./mock');
 
 const app = Fastify({ logger: true });
@@ -17,6 +17,7 @@ const config = {
   vacuum: (process.env.VACUUM_ENTITY_ID || '').trim() || (demo ? 'vacuum.ottoto' : ''),
   battery: (process.env.VACUUM_BATTERY_ENTITY_ID || '').trim(),
   prices: (process.env.PRICE_ENTITY_ID || 'sensor.energi_data_service').trim(),
+  weather: (process.env.WEATHER_ENTITY_ID || 'weather.home').trim(),
   // "Name:minutes,Name:minutes": appliances to find the cheapest start time for.
   appliances: list(process.env.APPLIANCES || 'Washing machine:120,Dishwasher:180')
     .map((item) => {
@@ -29,6 +30,26 @@ const demoStates = demo ? mock.createStates(config.vacuum) : null;
 
 async function loadStates() {
   return entityMap(demo ? demoStates : await ha('/api/states'));
+}
+
+// The hourly forecast is not a state attribute in modern HA; it comes from a service call.
+// Forecasts change slowly, so cache it instead of calling HA on every 8-second poll.
+const FORECAST_TTL_MS = 15 * 60000;
+let forecastCache = { at: 0, hours: [] };
+
+async function loadForecast(log) {
+  if (demo) return mock.forecast();
+  if (Date.now() - forecastCache.at < FORECAST_TTL_MS) return forecastCache.hours;
+  try {
+    const result = await ha('/api/services/weather/get_forecasts?return_response', 'POST', { entity_id: config.weather, type: 'hourly' });
+    const entry = result && result.service_response && result.service_response[config.weather];
+    forecastCache = { at: Date.now(), hours: (entry && entry.forecast) || [] };
+  } catch (error) {
+    // Weather is a nice-to-have: show current conditions without a forecast, retry in a minute.
+    log.warn({ err: error }, 'Could not load weather forecast');
+    forecastCache = { at: Date.now() - FORECAST_TTL_MS + 60000, hours: forecastCache.hours };
+  }
+  return forecastCache.hours;
 }
 
 const publicDir = path.resolve(__dirname, '../public');
@@ -91,8 +112,10 @@ app.get('/api/entities', async (request, reply) => {
 app.get('/api/state', async (request, reply) => {
   try {
     const map = await loadStates();
+    const forecast = map[config.weather] ? await loadForecast(request.log) : [];
     return {
       mode: demo ? 'demo' : 'live',
+      weather: weatherSummary(map, config.weather, forecast, Date.now()),
       lights: lightsSummary(map, config.scenes),
       vacuum: config.vacuum ? vacuumSummary(map, config.vacuum, config.battery) : null,
       media: mediaSummary(map, config.mediaPlayers),

@@ -152,6 +152,43 @@
     text('media-time', duration(m.duration - position) + ' left');
   }
 
+  // ---- Weather ----------------------------------------------------------------------
+
+  function degrees(t) { return t === null ? '--' : String(t).replace('-', '−') + '°'; }
+
+  function renderWeather(w) {
+    var visible = Boolean(w && w.available);
+    show('weather-card', visible);
+    if (!visible || !changed('weather', w)) return;
+
+    text('weather-icon', w.icon);
+    text('weather-temp', degrees(w.temperature));
+    text('weather-summary', w.condition + (w.wind !== null ? ' · wind ' + w.wind + ' m/s' : ''));
+
+    var rain = '';
+    if (w.outlookHours) {
+      if (!w.rain) rain = 'Dry for the next ' + w.outlookHours + ' hours';
+      else if (w.rain.from === null) rain = w.rain.to === null ? 'Rain for the next ' + w.outlookHours + ' hours' : 'Raining until ' + hm(new Date(w.rain.to));
+      else rain = 'Rain from ' + hm(new Date(w.rain.from)) + (w.rain.to !== null ? ' to ' + hm(new Date(w.rain.to)) : '');
+    }
+    text('weather-rain', rain);
+    text('weather-range', w.low === null ? '' : 'Next ' + w.outlookHours + ' h: ' + degrees(w.low) + ' to ' + degrees(w.high));
+
+    var sun = '';
+    if (w.sunUp && w.sunset) sun = 'Sun sets ' + hm(new Date(w.sunset));
+    else if (!w.sunUp && w.sunrise) sun = 'Sun rises ' + dayAndTime(w.sunrise);
+    text('weather-sun', sun);
+
+    var hours = clear(el('weather-hours'));
+    w.hours.forEach(function (h) {
+      var cell = make('div', 'hour' + (h.wet ? ' wet' : ''));
+      cell.appendChild(make('span', null, pad(new Date(h.start).getHours())));
+      cell.appendChild(make('b', null, h.icon));
+      cell.appendChild(make('span', null, degrees(h.temperature)));
+      hours.appendChild(cell);
+    });
+  }
+
   // ---- Electricity ----------------------------------------------------------------
 
   var LEVEL_TEXT = { cheap: 'Cheap right now', normal: 'Normal price right now', expensive: 'Expensive right now' };
@@ -321,6 +358,7 @@
     }
     renderLights(state.lights);
     renderMedia(state.media);
+    renderWeather(state.weather);
     renderEnergy(state.energy);
     renderVacuum(state.vacuum);
     text('last-update', 'LAST SYNC ' + hm(new Date()));

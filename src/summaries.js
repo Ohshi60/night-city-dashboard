@@ -322,4 +322,71 @@ function energySummary(map, priceId, appliances, now) {
   };
 }
 
-module.exports = { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary };
+// ---- Weather (any HA weather entity; hourly forecast from weather.get_forecasts) ----
+
+// HA condition → [plain words, symbol]. Symbols are old-iOS-safe Unicode, not newer emoji.
+const CONDITIONS = {
+  'clear-night': ['Clear', '☾'], sunny: ['Sunny', '☀'], partlycloudy: ['Partly cloudy', '⛅'],
+  cloudy: ['Cloudy', '☁'], fog: ['Fog', '≋'], rainy: ['Rain', '☂'], pouring: ['Heavy rain', '☂'],
+  snowy: ['Snow', '❄'], 'snowy-rainy': ['Sleet', '❄'], hail: ['Hail', '❄'], lightning: ['Lightning', '⚡'],
+  'lightning-rainy': ['Thunderstorms', '⚡'], windy: ['Windy', '≈'], 'windy-variant': ['Windy', '≈'],
+  exceptional: ['Unusual weather', '!']
+};
+const OUTLOOK_HOURS = 12;
+
+function toMs(speed, unit) {
+  if (typeof speed !== 'number') return null;
+  if (unit === 'm/s') return Math.round(speed);
+  if (unit === 'mph') return Math.round(speed * 0.447);
+  return Math.round(speed / 3.6); // km/h, met.no's default. Danes read wind in m/s.
+}
+
+function weatherSummary(map, weatherId, forecast, now) {
+  const w = map[weatherId];
+  if (!isAvailable(w)) return { available: false };
+  const a = w.attributes || {};
+  const condition = CONDITIONS[w.state] || [humanize(w.state), ''];
+  const hourly = (forecast || [])
+    .map((f) => ({ start: Date.parse(f.datetime), f }))
+    .filter((h) => !isNaN(h.start) && h.start + 3600000 > now)
+    .slice(0, OUTLOOK_HOURS);
+
+  // First stretch of rain in the outlook: from (null = already raining) and to (null = beyond the outlook).
+  const wet = (f) => (f.precipitation || 0) >= 0.1;
+  let rain = null;
+  const first = hourly.findIndex((h) => wet(h.f));
+  if (first >= 0) {
+    let last = first;
+    while (last + 1 < hourly.length && wet(hourly[last + 1].f)) last++;
+    rain = {
+      from: first === 0 ? null : hourly[first].start,
+      to: last === hourly.length - 1 ? null : hourly[last].start + 3600000
+    };
+  }
+  const temps = hourly.map((h) => h.f.temperature).filter((t) => typeof t === 'number');
+  const sun = map['sun.sun'];
+  const sunTime = (key) => (attr(sun, key) ? Date.parse(attr(sun, key)) || null : null);
+
+  return {
+    available: true,
+    temperature: typeof a.temperature === 'number' ? Math.round(a.temperature) : null,
+    condition: condition[0],
+    icon: condition[1],
+    wind: toMs(a.wind_speed, a.wind_speed_unit),
+    outlookHours: hourly.length,
+    rain,
+    low: temps.length ? Math.round(Math.min.apply(null, temps)) : null,
+    high: temps.length ? Math.round(Math.max.apply(null, temps)) : null,
+    hours: hourly.slice(1, 7).map((h) => ({
+      start: h.start,
+      temperature: typeof h.f.temperature === 'number' ? Math.round(h.f.temperature) : null,
+      icon: (CONDITIONS[h.f.condition] || ['', ''])[1],
+      wet: wet(h.f)
+    })),
+    sunUp: Boolean(sun) && sun.state === 'above_horizon',
+    sunrise: sunTime('next_rising'),
+    sunset: sunTime('next_setting')
+  };
+}
+
+module.exports = { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary };
