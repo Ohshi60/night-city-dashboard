@@ -26,13 +26,13 @@ Open `http://<IP_OF_YOUR_DOCKER_VM>:3080` from your MacBook or iPad. Test the on
 To connect real devices:
 
 1. In Home Assistant, click your user profile (bottom-left) → **Security** → **Long-lived access tokens** → **Create token**. Name it `Night City Dashboard`. Copy the token once; don't paste it in chat.
-2. Edit `.env`: set `DEMO_MODE=false`, `HA_TOKEN=...`, and `HA_URL=http://10.0.0.169:8123`.
+2. Edit `.env` (or the deployment's environment variables, e.g. in Coolify): set `DEMO_MODE=false`, `HA_TOKEN=...`, and `HA_URL` to Home Assistant's base URL **including the port** (e.g. `http://10.0.0.169` if HA serves on port 80, or `http://<ip>:8123` for the HAOS default). Both are required in live mode; the server exits at startup if either is missing.
 3. Find *exact* entity IDs: Home Assistant **Developer tools → States**, or use `http://<DOCKER_VM_IP>:3080/api/entities` after setting the token (read-only list of relevant entities).
 4. Set `LIGHT_ENTITY_ID`, `SCENE_ENTITY_ID`, and `VACUUM_ENTITY_ID` in `.env`. Optionally set `VACUUM_BATTERY_ENTITY_ID` if battery is published as a separate sensor.
 5. Restart with `sudo docker compose up -d --force-recreate` (rebuild only after code changes).
 6. Open `http://<DOCKER_VM_IP>:3080` again. Badge must read `LIVE SYSTEM`, not `DEMO MODE`. Verify status before issuing commands.
 
-Entity IDs are not guaranteed to match friendly device names. For example `Kontoret_main` in Zigbee2MQTT *may* appear as `light.kontoret_main` in Home Assistant, but verify it. The Dreame entity ID is deliberately left blank until discovered.
+Entity IDs are not guaranteed to match friendly device names. For example, the Zigbee2MQTT bulb `Kontoret_main` appears in Home Assistant as `light.0x8c65a3fffedf71b8` (its Zigbee address), not `light.kontoret_main`.
 
 ## Troubleshooting
 

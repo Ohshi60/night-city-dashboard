@@ -33,4 +33,4 @@ Deployment: `docker compose up -d --build` (read-only container, port 3080). It 
 
 ## Configuration
 
-All config is env vars (see `.env.example`): `DEMO_MODE`, `PORT`, `HA_URL`, `HA_TOKEN`, `LIGHT_ENTITY_ID`, `SCENE_ENTITY_ID`, `VACUUM_ENTITY_ID`, and the optional `VACUUM_BATTERY_ENTITY_ID`. The server exits at startup if it is not in demo mode and `HA_TOKEN` is unset.
+All config is env vars (see `.env.example`): `DEMO_MODE`, `PORT`, `HA_URL`, `HA_TOKEN`, `LIGHT_ENTITY_ID`, `SCENE_ENTITY_ID`, `VACUUM_ENTITY_ID`, and the optional `VACUUM_BATTERY_ENTITY_ID`. There is no hardcoded fallback for `HA_URL`: it includes the port (this install's HA serves on port 80, not the default 8123). Outside demo mode the server exits at startup if `HA_URL` or `HA_TOKEN` is unset. In production these are set as Coolify environment variables, not in a committed file.
