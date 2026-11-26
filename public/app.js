@@ -136,6 +136,7 @@
       text('media-title', 'Nothing playing');
       text('media-sub', 'The TV is off');
       text('media-meta', '');
+      text('media-device', '');
       show('media-art', false);
       renderProgress();
       return;
@@ -144,6 +145,7 @@
     text('media-title', m.title || m.app || 'TV is on');
     text('media-sub', m.title ? (m.subtitle || '') : (m.app ? 'App open' : ''));
     text('media-meta', (m.title && m.app ? m.app + ' · ' : '') + stateName + ' · ' + m.device);
+    text('media-device', 'On ' + m.device);
 
     if (m.artwork) {
       var src = '/api/media/artwork?entity=' + encodeURIComponent(m.id) + '&v=' + m.artwork;
@@ -307,6 +309,7 @@
 
     var run = clear(el('vacuum-run'));
     var r = v.lastRun;
+    text('vacuum-run-short', r ? 'Last run ' + when(r.timestamp) + ' · ' + (r.completed ? 'finished' : "didn't finish") : 'No cleaning runs yet');
     if (!r) run.appendChild(make('p', 'run-line', 'No cleaning runs yet.'));
     else {
       run.appendChild(make('p', 'run-when', when(r.timestamp)));
@@ -346,6 +349,8 @@
       photoRun = runKey;
       var strip = clear(el('photo-strip'));
       show('photo-section', data.photos.length > 0);
+      show('vacuum-pets', data.photos.length > 0);
+      text('vacuum-pets', '🐾 Pet spotted on the last run');
       text('photo-count', data.photos.length + (data.photos.length === 1 ? ' PHOTO' : ' PHOTOS'));
       data.photos.forEach(function (p) {
         var src = '/api/vacuum/photos/' + p.index + '?v=' + encodeURIComponent(data.version);
@@ -369,6 +374,62 @@
     show('viewer', true);
   }
   el('viewer').onclick = function () { show('viewer', false); };
+
+  // ---- Details sheet ------------------------------------------------------------
+  // The card's .detail block is moved into the sheet while it is open and moved back after,
+  // so the render functions keep updating the same elements wherever they are.
+
+  var SHEET_IDLE_MS = 60000; // a wall display should drift back to the overview
+  var openSheet = null;
+  var sheetTimer = null;
+
+  function resetSheetTimer() {
+    clearTimeout(sheetTimer);
+    sheetTimer = setTimeout(closeDetail, SHEET_IDLE_MS);
+  }
+
+  function openDetail(card) {
+    closeDetail();
+    var detail = el(card.getAttribute('data-detail'));
+    var accent = (/accent-\w+/.exec(card.className) || [''])[0];
+    openSheet = { card: card, detail: detail };
+    el('sheet-body').appendChild(detail);
+    show(detail.id, true);
+    text('sheet-title', card.getAttribute('data-title'));
+    el('sheet-panel').className = 'sheet ' + accent;
+    show('sheet', true);
+    resetSheetTimer();
+  }
+
+  function closeDetail() {
+    clearTimeout(sheetTimer);
+    if (!openSheet) return;
+    show(openSheet.detail.id, false);
+    openSheet.card.appendChild(openSheet.detail);
+    openSheet = null;
+    show('sheet', false);
+  }
+
+  // A tap on a card opens its details, unless the tap was on one of the card's own buttons.
+  function insideButton(node, card) {
+    for (; node && node !== card; node = node.parentNode) {
+      if (node.tagName === 'BUTTON') return true;
+    }
+    return false;
+  }
+  var tappable = document.querySelectorAll('[data-detail]');
+  for (var t = 0; t < tappable.length; t++) {
+    (function (card) {
+      card.onclick = function (event) {
+        if (!insideButton(event.target, card)) openDetail(card);
+      };
+    }(tappable[t]));
+  }
+  el('sheet-close').onclick = closeDetail;
+  el('sheet').onclick = function (event) {
+    if (event.target === el('sheet')) closeDetail(); // tap on the dimmed area outside the panel
+    else resetSheetTimer();
+  };
 
   // ---- Night mode & summary line ------------------------------------------------
 

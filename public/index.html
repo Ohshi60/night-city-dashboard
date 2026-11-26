@@ -13,86 +13,102 @@
   <div class="app">
     <header class="topbar">
       <div>
-        <p class="eyebrow">APARTMENT / CONTROL SYSTEM</p>
         <h1>NIGHT <span>CITY</span><b class="cursor">_</b></h1>
-        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.3</p>
+        <p class="tagline">APARTMENT CONTROL / v0.4</p>
       </div>
       <div class="topright">
-        <div class="mode" id="mode">CONNECTING</div>
         <div class="clock" id="clock">--:--</div>
+        <div class="mode" id="mode">CONNECTING</div>
       </div>
     </header>
 
     <div class="statusbar" id="statusbar">Connecting to Home Assistant…</div>
 
-    <div class="section-heading"><span class="section-number">01</span> HOME <span class="line"></span></div>
+    <!-- Overview: every card fits on one iPad screen. Tapping a card (outside its buttons) opens
+         its details in the sheet; the .detail block is moved there while open and moved back after. -->
     <main class="cards">
-      <section class="card scene-card accent-amber">
+      <section class="card third scene-card accent-amber" data-detail="lights-detail" data-title="LIGHTING / KONTOR">
         <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
         <div class="ambient-orb" id="light-orb"></div>
         <h2>SCENES</h2>
         <p class="secondary" id="scene-note">Loading…</p>
         <div class="scene-buttons" id="scenes"></div>
         <button type="button" id="lights-off" class="subtle full">ALL LIGHTS OFF</button>
-        <div id="light-list" class="light-list"></div>
+        <p class="more">LIGHTS ›</p>
+        <div class="detail is-hidden" id="lights-detail">
+          <p class="subhead">LIGHTS</p>
+          <div id="light-list" class="light-list"></div>
+        </div>
       </section>
 
-      <div class="stack">
-      <section class="card media-card accent-magenta">
-        <div class="card-top"><span class="card-label">NOW PLAYING / LIVING ROOM</span><span class="dot blue" id="media-dot"></span></div>
-        <img id="media-art" class="media-art is-hidden" alt="">
+      <section class="card third weather-card accent-cyan is-hidden" id="weather-card" data-detail="weather-detail" data-title="OUTSIDE / TODAY">
+        <div class="card-top"><span class="card-label">OUTSIDE / TODAY</span><span class="dot active"></span></div>
+        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><p class="big" id="weather-temp">--</p></div>
+        <p class="secondary" id="weather-summary"></p>
+        <p class="weather-line" id="weather-rain"></p>
+        <p class="weather-line" id="weather-sun"></p>
+        <p class="more">DETAILS ›</p>
+        <div class="detail is-hidden" id="weather-detail">
+          <p class="weather-line" id="weather-range"></p>
+          <p class="subhead">NEXT HOURS</p>
+          <div class="hours" id="weather-hours"></div>
+        </div>
+      </section>
+
+      <section class="card third media-card accent-magenta" data-detail="media-detail" data-title="NOW PLAYING / LIVING ROOM">
+        <div class="card-top"><span class="card-label">NOW PLAYING</span><span class="dot" id="media-dot"></span></div>
         <h2 id="media-title">Loading…</h2>
         <p class="secondary" id="media-sub"></p>
         <p class="micro" id="media-meta"></p>
         <div class="progress is-hidden" id="media-progress"><div class="progress-fill" id="media-progress-fill"></div></div>
-        <p class="micro" id="media-time"></p>
+        <p class="more">DETAILS ›</p>
+        <div class="detail is-hidden" id="media-detail">
+          <img id="media-art" class="media-art is-hidden" alt="">
+          <p class="weather-line" id="media-time"></p>
+          <p class="micro" id="media-device"></p>
+        </div>
       </section>
 
-      <section class="card weather-card accent-cyan is-hidden" id="weather-card">
-        <div class="card-top"><span class="card-label">OUTSIDE / TODAY</span><span class="dot blue active"></span></div>
-        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><p class="big" id="weather-temp">--</p></div>
-        <p class="secondary" id="weather-summary"></p>
-        <p class="weather-line" id="weather-rain"></p>
-        <p class="weather-line" id="weather-range"></p>
-        <p class="weather-line" id="weather-sun"></p>
-        <div class="hours" id="weather-hours"></div>
-      </section>
-      </div>
-
-      <section class="card wide energy-card accent-violet is-hidden" id="energy-card">
-        <div class="card-top"><span class="card-label">ELECTRICITY / PRICE PER kWh</span><span class="dot" id="energy-dot"></span></div>
-        <div class="col">
+      <section class="card half energy-card accent-violet is-hidden" id="energy-card" data-detail="energy-detail" data-title="ELECTRICITY / PRICE PER kWh">
+        <div class="card-top"><span class="card-label">ELECTRICITY</span><span class="dot" id="energy-dot"></span></div>
+        <div class="price-head">
           <p class="big" id="energy-now">--</p>
           <p class="level" id="energy-level"></p>
-          <p class="subhead">BEST TIME TO START</p>
-          <div id="energy-advice"></div>
-          <p class="micro" id="energy-note"></p>
-        </div><div class="col">
+        </div>
+        <div id="energy-advice"></div>
+        <p class="more">PRICE CHART ›</p>
+        <div class="detail is-hidden" id="energy-detail">
           <div class="chart" id="energy-chart" role="img" aria-label="Electricity price for the coming hours"></div>
           <div class="chart-axis" id="energy-axis"></div>
           <p class="micro" id="energy-readout">Tap a bar to see its price.</p>
+          <p class="micro" id="energy-note"></p>
         </div>
       </section>
 
-      <section class="card wide vacuum-card accent-teal is-hidden" id="vacuum-card">
-        <div class="card-top"><span class="card-label">APARTMENT / CLEANING</span><span class="dot blue" id="vacuum-dot"></span></div>
-        <div class="col">
-          <div class="vacuum-head">
-            <div><h2 id="vacuum-name">VACUUM</h2><p class="secondary" id="vacuum-state">Loading…</p></div>
-            <div class="battery"><p class="big" id="vacuum-battery">--</p><p class="micro">BATTERY</p></div>
-          </div>
-          <p class="subhead">NEEDS ATTENTION</p>
-          <ul class="attention" id="vacuum-attention"></ul>
-          <div class="chips" id="vacuum-station"></div>
-        </div><div class="col">
-          <p class="subhead">LAST RUN</p>
-          <div id="vacuum-run"></div>
-          <p class="subhead">PARTS</p>
-          <div id="vacuum-parts"></div>
+      <section class="card half vacuum-card accent-teal is-hidden" id="vacuum-card" data-detail="vacuum-detail" data-title="APARTMENT / CLEANING">
+        <div class="card-top"><span class="card-label">CLEANING</span><span class="dot" id="vacuum-dot"></span></div>
+        <div class="vacuum-head">
+          <div><h2 id="vacuum-name">VACUUM</h2><p class="secondary" id="vacuum-state">Loading…</p></div>
+          <div class="battery"><p class="big" id="vacuum-battery">--</p><p class="micro">BATTERY</p></div>
         </div>
-        <div id="photo-section" class="photo-section is-hidden">
-          <p class="subhead">🐾 PET SPOTTED ON THE LAST RUN <span id="photo-count"></span></p>
-          <div class="photo-strip" id="photo-strip"></div>
+        <ul class="attention" id="vacuum-attention"></ul>
+        <p class="weather-line" id="vacuum-run-short"></p>
+        <p class="weather-line is-hidden" id="vacuum-pets"></p>
+        <p class="more">DETAILS ›</p>
+        <div class="detail is-hidden" id="vacuum-detail">
+          <div class="col">
+            <p class="subhead">LAST RUN</p>
+            <div id="vacuum-run"></div>
+            <p class="subhead">BASE STATION</p>
+            <div class="chips" id="vacuum-station"></div>
+          </div><div class="col">
+            <p class="subhead">PARTS</p>
+            <div id="vacuum-parts"></div>
+          </div>
+          <div id="photo-section" class="photo-section is-hidden">
+            <p class="subhead">🐾 PET SPOTTED ON THE LAST RUN <span id="photo-count"></span></p>
+            <div class="photo-strip" id="photo-strip"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -101,6 +117,16 @@
   </div>
 
   <!-- Hidden via the is-hidden class: the CSP blocks inline style attributes. -->
+  <div class="sheet-backdrop is-hidden" id="sheet">
+    <div class="sheet" id="sheet-panel">
+      <div class="sheet-head">
+        <span class="card-label" id="sheet-title"></span>
+        <button type="button" class="subtle sheet-close" id="sheet-close">✕ CLOSE</button>
+      </div>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+
   <div class="viewer is-hidden" id="viewer">
     <img id="viewer-img" alt="">
     <p id="viewer-caption"></p>

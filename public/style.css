@@ -16,14 +16,15 @@ body {
   background-size: 100% 700px, 100% 700px, 44px 44px, 44px 44px;
   background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
-.app { width: 100%; max-width: 1120px; margin: 0 auto; padding: 26px 28px 16px; }
+.app { width: 100%; max-width: 1120px; margin: 0 auto; padding: 16px 22px 10px; }
 
-/* Header */
-.topbar { display: table; width: 100%; margin-bottom: 18px; }
-.topbar > div { display: table-cell; vertical-align: top; }
-.topright { text-align: right; width: 160px; }
-.eyebrow { margin: 0 0 4px; letter-spacing: 2.5px; font-size: 10px; font-weight: 700; color: #8fb3c6; }
-h1 { font-size: 44px; letter-spacing: 3px; line-height: 1; font-weight: 800; margin: 3px 0 8px; text-shadow: 0 0 18px rgba(255,95,200,.35); }
+/* Header: compact so the overview fits one iPad screen (about 1024×690 in Safari). */
+.topbar { display: table; width: 100%; margin-bottom: 8px; }
+.topbar > div { display: table-cell; vertical-align: middle; }
+.topright { text-align: right; width: 200px; }
+.topright .clock { display: inline-block; vertical-align: middle; margin: 0 12px 0 0; }
+.topright .mode { vertical-align: middle; }
+h1 { font-size: 32px; letter-spacing: 3px; line-height: 1; font-weight: 800; margin: 0 0 4px; text-shadow: 0 0 18px rgba(255,95,200,.35); }
 h1 span { color: #f5a65b; text-shadow: 0 0 16px rgba(245,166,91,.55); }
 .cursor { color: #4fd4f0; font-weight: normal; text-shadow: 0 0 10px rgba(79,212,240,.8); }
 .tagline { font-size: 10px; letter-spacing: 2px; color: #7f8ea3; margin: 0; }
@@ -31,7 +32,7 @@ h1 span { color: #f5a65b; text-shadow: 0 0 16px rgba(245,166,91,.55); }
 .clock { font-size: 30px; font-weight: 300; letter-spacing: 1px; margin-top: 8px; }
 
 /* One-line summary of what matters right now */
-.statusbar { color: #dfe6f0; font-size: 15px; border-top: 1px solid #222c3d; border-bottom: 1px solid #222c3d; padding: 11px 0; min-height: 44px; }
+.statusbar { color: #dfe6f0; font-size: 15px; border-top: 1px solid #222c3d; border-bottom: 1px solid #222c3d; padding: 9px 0; min-height: 40px; margin-bottom: 14px; }
 .statusbar.error { color: #ff9a9a; }
 .section-heading { margin: 20px 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #c5cdd7; }
 .section-number { color: #f5a65b; margin-right: 10px; }
@@ -45,7 +46,12 @@ h1 span { color: #f5a65b; text-shadow: 0 0 16px rgba(245,166,91,.55); }
   border: 1px solid #263147; border-top: 2px solid #3b4a66; border-radius: 10px; font-size: 14px; overflow: hidden;
 }
 .card.wide { width: 97%; width: calc(100% - 14px); }
-.card-top { display: table; width: 100%; margin-bottom: 15px; }
+.card.third { width: 31%; width: calc(33.33% - 14px); height: 332px; min-height: 0; padding-top: 16px; }
+.card.half { width: 48%; width: calc(50% - 14px); height: 214px; min-height: 0; padding-top: 16px; }
+.card[data-detail] { cursor: pointer; }
+.card-top { display: table; width: 100%; margin-bottom: 10px; }
+/* "DETAILS ›" hint, bottom right of every tappable card. */
+.card .more { position: absolute; right: 18px; bottom: 12px; margin: 0; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #6f7f96; }
 .card-top > span { display: table-cell; }
 .card-label { color: #aab5c1; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
 .dot { display: block !important; margin-left: auto; margin-top: 4px; width: 8px; height: 8px; background: #475468; border-radius: 50%; }
@@ -97,20 +103,24 @@ button.full { width: 100%; }
 .scene-card h2, .scene-card p, .scene-card div, .scene-card button { position: relative; }
 /* After the rule above (same specificity would otherwise make the orb position: relative). */
 .scene-card .ambient-orb { position: absolute; right: 26px; top: 50px; width: 84px; height: 84px; border-radius: 50%; background: #1d1925; box-shadow: none; }
-.scene-buttons { margin: 18px -4px 8px; font-size: 0; }
-.scene-buttons button { display: inline-block; width: 31%; width: calc(33.33% - 8px); margin: 0 4px 8px; padding: 0 6px; font-size: 12px; background: #1c1a26; border-color: #3d3346; }
+.scene-buttons { margin: 12px 0 0; font-size: 0; }
+.scene-buttons button { display: block; width: 100%; margin: 0 0 6px; padding: 0 14px; font-size: 12px; text-align: left; background: #1c1a26; border-color: #3d3346; }
 .scene-buttons button.active { background: #2c2230; border-width: 2px; }
 .swatch { display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; vertical-align: 0; background: #555; }
 .light-list { margin-top: 10px; }
 
 /* Media */
-.media-art { float: right; width: 92px; max-height: 138px; margin: 0 0 8px 14px; border-radius: 6px; border: 1px solid #33415a; }
+.media-art { float: left; width: 140px; max-height: 210px; margin: 0 18px 8px 0; border-radius: 6px; border: 1px solid #33415a; }
 .progress { clear: both; height: 4px; margin-top: 16px; background: #26314a; border-radius: 2px; overflow: hidden; }
 .progress-fill { height: 4px; width: 0; background: #ff5fc8; }
 
-/* Right-hand column holding several short cards next to a tall one. */
-.stack { display: inline-block; vertical-align: top; width: 50%; }
-.stack .card { display: block; width: auto; min-height: 0; }
+/* Details sheet: one card's details over a dimmed overview. Closes on ✕, a tap outside, or after a minute. */
+.sheet-backdrop { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 5; background: rgba(3,5,10,.82); padding: 36px 24px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet { position: relative; max-width: 900px; margin: 0 auto; padding: 18px 24px 24px; background: #111725; border: 1px solid #263147; border-top: 2px solid #3b4a66; border-radius: 12px; font-size: 14px; }
+.sheet-head { display: table; width: 100%; margin-bottom: 6px; }
+.sheet-head > * { display: table-cell; vertical-align: middle; }
+.sheet-close { float: right; }
+.sheet .light-list .info-pair { font-size: 14px; padding: 13px 0; }
 
 /* Weather */
 .weather-now { display: table; }
@@ -122,19 +132,22 @@ button.full { width: 100%; }
 .hour b { display: block; font-size: 15px; font-weight: normal; color: #bfe9f5; margin: 2px 0; }
 .hour.wet b { color: #4fd4f0; }
 
-/* Two-column wide cards */
-.card .col { display: inline-block; vertical-align: top; width: 50%; padding-right: 22px; }
-.card .col + .col { padding-right: 0; padding-left: 22px; border-left: 1px solid #222c3d; }
+/* Two-column layout (vacuum details) */
+.col { display: inline-block; vertical-align: top; width: 50%; padding-right: 22px; }
+.col + .col { padding-right: 0; padding-left: 22px; border-left: 1px solid #222c3d; }
 
 /* Electricity: one series, so one hue; bar height carries the price from a zero baseline. */
+.price-head { margin-bottom: 6px; }
+.price-head .big, .price-head .level { display: inline-block; vertical-align: baseline; }
+.price-head .level { margin-left: 14px; }
 .level { font-size: 14px; font-weight: 600; margin: 4px 0 0; }
 .level-cheap { color: #5fe0b0; }
 .level-normal { color: #c9d2dd; }
 .level-expensive { color: #ffb35c; }
-.advice-row { padding: 8px 0; border-bottom: 1px solid #263147; }
+.advice-row { padding: 6px 0; border-top: 1px solid #263147; }
 .advice-row strong { display: block; font-size: 15px; color: #eef2f8; }
 .advice-row span { display: block; font-size: 12px; color: #9fb0c3; }
-.chart { position: relative; height: 130px; font-size: 0; white-space: nowrap; border-bottom: 1px solid #33415a; }
+.chart { position: relative; height: 220px; margin-top: 10px; font-size: 0; white-space: nowrap; border-bottom: 1px solid #33415a; }
 .chart-col { position: relative; display: inline-block; vertical-align: bottom; height: 100%; padding: 0 1px; cursor: pointer; }
 .chart-col.midnight { border-left: 1px dashed #46557a; }
 .chart-bar { position: absolute; left: 1px; right: 1px; bottom: 0; background: #6a57b8; border-radius: 4px 4px 0 0; }
@@ -147,7 +160,7 @@ button.full { width: 100%; }
 .vacuum-head { display: table; width: 100%; }
 .vacuum-head > div { display: table-cell; vertical-align: bottom; }
 .vacuum-head .battery { text-align: right; }
-.attention { margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.attention { margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; }
 .attention li { padding: 3px 0; color: #ffb35c; }
 .attention li.ok { color: #5fe0b0; }
 .chips { margin-top: 10px; font-size: 0; }
@@ -183,7 +196,8 @@ body.night { background-image: none; background-color: #040509; color: #c9b9a6; 
 .night h1 span, .night .section-number { color: #a8794e; }
 .night .clock, .night .statusbar, .night .advice-row strong, .night .weather-line, .night .info-pair strong, .night .big { color: #c9b9a6; }
 .night .secondary, .night .micro, .night .card-label, .night .hour, .night .advice-row span, .night .run-line { color: #8c7f71 !important; }
-.night .card { background: #0a0c12; border-color: #1a1e29; box-shadow: none; }
+.night .card, .night .sheet { background: #0a0c12; border-color: #1a1e29; box-shadow: none; }
+.night .more { color: #4f4840; }
 .night .accent-amber, .night .accent-magenta, .night .accent-cyan, .night .accent-violet, .night .accent-teal { border-top-color: #4a3b2e; }
 .night .dot.active { box-shadow: none !important; }
 .night .chart-bar { background: #4a3f6e; }
@@ -196,7 +210,7 @@ body.night { background-image: none; background-color: #040509; color: #c9b9a6; 
 .night .dot.active { background: #6f6458 !important; }
 .night .level-cheap, .night .ok, .night .attention li.ok, .night .chip { color: #6fa08f !important; border-color: #2f4a42; }
 .night .level-expensive, .night .warn, .night .attention li, .night .chip.bad { color: #b08a60 !important; }
-.night .line, .night .statusbar, .night footer, .night .card .col + .col, .night .info-pair, .night .advice-row { border-color: #1b1e27; }
+.night .line, .night .statusbar, .night footer, .night .col + .col, .night .info-pair, .night .advice-row { border-color: #1b1e27; }
 .night .weather-icon, .night .hour b { color: #8c7f71; }
 
 @media (max-width: 650px) {
@@ -205,9 +219,9 @@ body.night { background-image: none; background-color: #040509; color: #c9b9a6; 
   .tagline { letter-spacing: 1px; }
   .topright { width: 100px; }
   .clock { font-size: 22px; }
-  .card, .card.wide { display: block; width: auto; min-height: 0; margin-bottom: 13px; }
-  .stack { display: block; width: auto; }
-  .card .col, .card .col + .col { display: block; width: auto; padding: 0; border: 0; }
-  .energy-card .col + .col { margin-top: 16px; }
+  .card, .card.wide, .card.third, .card.half { display: block; width: auto; height: auto; min-height: 0; margin-bottom: 13px; padding-bottom: 34px; }
+  .col, .col + .col { display: block; width: auto; padding: 0; border: 0; }
+  .sheet-backdrop { padding: 12px 8px; }
+  .sheet { padding: 14px 14px 18px; }
   .line { width: 12%; }
 }
