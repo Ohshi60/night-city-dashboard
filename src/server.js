@@ -3,23 +3,25 @@
 const Fastify = require('fastify');
 const fs = require('node:fs');
 const path = require('node:path');
-const { ha } = require('./ha');
+const { ha, haBinary } = require('./ha');
+const { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary } = require('./summaries');
+const mock = require('./mock');
 
 const app = Fastify({ logger: true });
 const demo = process.env.DEMO_MODE === 'true';
 const port = Number(process.env.PORT || 3080);
-const entities = {
-  light: (process.env.LIGHT_ENTITY_ID || '').trim(),
-  scene: (process.env.SCENE_ENTITY_ID || '').trim(),
-  vacuum: (process.env.VACUUM_ENTITY_ID || '').trim(),
+const list = (value) => (value || '').split(',').map((s) => s.trim()).filter(Boolean);
+const config = {
+  scenes: list(process.env.SCENE_ENTITY_IDS), // empty = every scene in HA
+  mediaPlayers: list(process.env.MEDIA_PLAYER_ENTITY_IDS), // empty = every media player in HA
+  vacuum: (process.env.VACUUM_ENTITY_ID || '').trim() || (demo ? 'vacuum.ottoto' : ''),
   battery: (process.env.VACUUM_BATTERY_ENTITY_ID || '').trim()
 };
+const demoStates = demo ? mock.createStates(config.vacuum) : null;
 
-const mock = {
-  light: { id: 'light.kontoret_main', name: 'Kontoret Main', available: true, on: true, brightness: 25 },
-  scene: { id: 'scene.neo_noir', name: 'Neo-Noir', available: true },
-  vacuum: { id: 'vacuum.dreame_demo', name: 'Dreame L50s Pro Ultra', available: true, state: 'docked', battery: 85 }
-};
+async function loadStates() {
+  return entityMap(demo ? demoStates : await ha('/api/states'));
+}
 
 const publicDir = path.resolve(__dirname, '../public');
 const files = {
@@ -59,113 +61,128 @@ Object.keys(files).forEach((url) => {
   });
 });
 
-function isAvailable(s) {
-  return Boolean(s && s.state !== 'unavailable' && s.state !== 'unknown');
-}
-
-function entityMap(states) {
-  const result = Object.create(null);
-  states.forEach((s) => { result[s.entity_id] = s; });
-  return result;
-}
-
-function lightSummary(s, id) {
-  return {
-    id, name: s && s.attributes && s.attributes.friendly_name || 'Gaming-room light',
-    available: isAvailable(s), on: isAvailable(s) && s.state === 'on',
-    brightness: s && s.attributes && typeof s.attributes.brightness === 'number'
-      ? Math.round(s.attributes.brightness / 255 * 100) : null
-  };
-}
-function sceneSummary(s, id) {
-  return { id, name: s && s.attributes && s.attributes.friendly_name || 'Neo-Noir', available: isAvailable(s) };
-}
-function vacuumSummary(s, id, batterySensor) {
-  let battery = null;
-  if (s && s.attributes && typeof s.attributes.battery_level === 'number') battery = s.attributes.battery_level;
-  if (batterySensor && !isNaN(Number(batterySensor.state)) && isAvailable(batterySensor)) battery = Number(batterySensor.state);
-  return {
-    id, name: s && s.attributes && s.attributes.friendly_name || 'Dreame L50s Pro Ultra',
-    available: isAvailable(s), state: isAvailable(s) ? s.state : 'unavailable', battery
-  };
+function haUnreachable(request, reply, error, what) {
+  request.log.error({ err: error }, 'Home Assistant request failed: ' + what);
+  return reply.code(502).send({ error: 'Cannot contact Home Assistant: ' + error.message });
 }
 
 app.get('/api/health', async () => ({ ok: true, mode: demo ? 'demo' : 'live' }));
 
 app.get('/api/entities', async (request, reply) => {
-  if (demo) return { entities: [{ id: mock.light.id, name: mock.light.name }, { id: mock.scene.id, name: mock.scene.name }, { id: mock.vacuum.id, name: mock.vacuum.name }] };
   try {
-    const list = await ha('/api/states');
+    const map = await loadStates();
     return {
-      entities: list.filter((s) => /^(light|scene|vacuum|sensor)\./.test(s.entity_id))
-        .map((s) => ({ id: s.entity_id, name: s.attributes && s.attributes.friendly_name || s.entity_id }))
+      entities: Object.keys(map).filter((id) => /^(light|scene|vacuum|sensor|media_player)\./.test(id))
+        .map((id) => ({ id, name: map[id].attributes && map[id].attributes.friendly_name || id }))
     };
   } catch (error) {
-    request.log.error({ err: error }, 'Could not load Home Assistant entities');
-    return reply.code(502).send({ error: 'Cannot contact Home Assistant: ' + error.message });
+    return haUnreachable(request, reply, error, 'entities');
   }
 });
 
 app.get('/api/state', async (request, reply) => {
-  if (demo) return { mode: 'demo', light: mock.light, scene: mock.scene, vacuum: mock.vacuum };
   try {
-    const map = entityMap(await ha('/api/states'));
+    const map = await loadStates();
     return {
-      mode: 'live',
-      light: lightSummary(map[entities.light], entities.light),
-      scene: sceneSummary(map[entities.scene], entities.scene),
-      vacuum: vacuumSummary(map[entities.vacuum], entities.vacuum, map[entities.battery])
+      mode: demo ? 'demo' : 'live',
+      lights: lightsSummary(map, config.scenes),
+      vacuum: config.vacuum ? vacuumSummary(map, config.vacuum, config.battery) : null,
+      media: mediaSummary(map, config.mediaPlayers)
     };
   } catch (error) {
-    request.log.error({ err: error }, 'Could not load Home Assistant state');
-    return reply.code(502).send({ error: 'Cannot contact Home Assistant: ' + error.message });
+    return haUnreachable(request, reply, error, 'state');
   }
 });
 
-const actions = {
-  'light.on': ['light', 'turn_on', 'light'],
-  'light.off': ['light', 'turn_off', 'light'],
-  'light.brightness': ['light', 'turn_on', 'light'],
-  'scene.activate': ['scene', 'turn_on', 'scene'],
-  'vacuum.start': ['vacuum', 'start', 'vacuum'],
-  'vacuum.pause': ['vacuum', 'pause', 'vacuum'],
-  'vacuum.dock': ['vacuum', 'return_to_base', 'vacuum']
-};
+// ---- Vacuum obstacle photos (latest run only; that is all the integration serves) ----
+
+let photoCache = { key: null, photos: [] };
+
+app.get('/api/vacuum/photos', async (request, reply) => {
+  if (demo || !config.vacuum) return { version: null, photos: [] };
+  const base = vacuumBase(config.vacuum);
+  try {
+    // The history sensor's state is the latest run's time: only re-read the photo list when it changes.
+    const history = await ha('/api/states/sensor.' + base + '_cleaning_history');
+    if (photoCache.key !== history.state) {
+      const data = await haBinary('/api/camera_history_map_proxy/camera.' + base + '_map?index=1&data=1');
+      photoCache = { key: history.state, photos: parsePhotoList(data.body) };
+    }
+    return { version: photoCache.key, photos: photoCache.photos };
+  } catch (error) {
+    return haUnreachable(request, reply, error, 'vacuum photo list');
+  }
+});
+
+app.get('/api/vacuum/photos/:index', {
+  schema: { params: { type: 'object', properties: { index: { type: 'integer', minimum: 1, maximum: 999 } } } }
+}, async (request, reply) => {
+  const index = request.params.index;
+  if (demo || !config.vacuum || !photoCache.photos.some((p) => p.index === index)) {
+    return reply.code(404).send({ error: 'Photo not found' });
+  }
+  try {
+    const image = await haBinary('/api/camera_map_obstacle_history_proxy/camera.' + vacuumBase(config.vacuum) + '_map?history_index=1&index=' + index);
+    return reply.header('Cache-Control', 'private, max-age=86400').type(image.contentType).send(image.body);
+  } catch (error) {
+    return haUnreachable(request, reply, error, 'vacuum photo');
+  }
+});
+
+// ---- Media artwork (proxied so the browser never sees HA URLs or tokens) ----
+
+app.get('/api/media/artwork', {
+  schema: { querystring: { type: 'object', required: ['entity'], properties: { entity: { type: 'string', pattern: '^media_player\\.[a-z0-9_]+$' } } } }
+}, async (request, reply) => {
+  const id = request.query.entity;
+  if (demo || (config.mediaPlayers.length && config.mediaPlayers.indexOf(id) < 0)) {
+    return reply.code(404).send({ error: 'No artwork' });
+  }
+  try {
+    const player = await ha('/api/states/' + id);
+    const picture = player && player.attributes && player.attributes.entity_picture;
+    // Only follow HA-relative paths, never arbitrary URLs.
+    if (typeof picture !== 'string' || picture.charAt(0) !== '/' || picture.charAt(1) === '/') {
+      return reply.code(404).send({ error: 'No artwork' });
+    }
+    const image = await haBinary(picture);
+    return reply.header('Cache-Control', 'private, max-age=3600').type(image.contentType).send(image.body);
+  } catch (error) {
+    return haUnreachable(request, reply, error, 'media artwork');
+  }
+});
+
+// ---- Actions: a fixed list, mapped to HA service calls on the server ----
 
 app.post('/api/action', {
   schema: {
     body: {
       type: 'object', additionalProperties: false, required: ['action'],
       properties: {
-        action: { type: 'string', enum: Object.keys(actions) },
-        brightness: { type: 'integer', minimum: 1, maximum: 100 }
+        action: { type: 'string', enum: ['scene.activate', 'lights.off'] },
+        scene: { type: 'string', pattern: '^scene\\.[a-z0-9_]+$' }
       }
     }
   }
 }, async (request, reply) => {
-  const body = request.body;
-  const action = body.action;
-  if (action === 'light.brightness' && !Number.isInteger(body.brightness)) {
-    return reply.code(400).send({ error: 'brightness must be an integer from 1 to 100' });
-  }
-
-  const [domain, service, kind] = actions[action];
-  if (demo) {
-    if (action === 'light.on') mock.light.on = true;
-    if (action === 'light.off') mock.light.on = false;
-    if (action === 'light.brightness') { mock.light.on = true; mock.light.brightness = body.brightness; }
-    if (action === 'scene.activate') { mock.light.on = true; mock.light.brightness = 25; }
-    if (action === 'vacuum.start') mock.vacuum.state = 'cleaning';
-    if (action === 'vacuum.pause') mock.vacuum.state = 'paused';
-    if (action === 'vacuum.dock') mock.vacuum.state = 'returning';
-    return { ok: true };
-  }
-
-  if (!entities[kind]) return reply.code(409).send({ error: 'Entity not configured: ' + kind + '. See /api/entities.' });
-  const payload = { entity_id: entities[kind] };
-  if (action === 'light.brightness') payload.brightness_pct = body.brightness;
+  const { action, scene } = request.body;
   try {
-    await ha('/api/services/' + domain + '/' + service, 'POST', payload);
+    const lights = lightsSummary(await loadStates(), config.scenes);
+    let call;
+    if (action === 'scene.activate') {
+      // Only scenes the dashboard shows may be activated.
+      if (!scene || !lights.scenes.some((s) => s.id === scene)) {
+        return reply.code(400).send({ error: 'Unknown scene: ' + (scene || '(none)') });
+      }
+      call = ['scene', 'turn_on', { entity_id: scene }];
+    } else {
+      const ids = lights.lights.filter((l) => l.available).map((l) => l.id);
+      if (!ids.length) return reply.code(409).send({ error: 'No reachable lights to turn off' });
+      call = ['light', 'turn_off', { entity_id: ids }];
+    }
+
+    if (demo) mock.applyAction(demoStates, call);
+    else await ha('/api/services/' + call[0] + '/' + call[1], 'POST', call[2]);
     return { ok: true };
   } catch (error) {
     request.log.error({ err: error }, 'Home Assistant service call failed');

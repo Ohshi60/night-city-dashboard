@@ -15,7 +15,7 @@
       <div>
         <p class="eyebrow">APARTMENT / CONTROL SYSTEM</p>
         <h1>NIGHT <span>CITY</span><b class="cursor">_</b></h1>
-        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.1</p>
+        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.2</p>
       </div>
       <div class="topright">
         <div class="mode" id="mode">CONNECTING</div>
@@ -25,53 +25,57 @@
 
     <div class="statusbar" id="statusbar">Connecting to Home Assistant…</div>
 
-    <div class="section-heading"><span class="section-number">01</span> CONTROL ZONES <span class="line"></span></div>
+    <div class="section-heading"><span class="section-number">01</span> HOME <span class="line"></span></div>
     <main class="cards">
-      <section class="card light-card">
-        <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
-        <h2 id="light-name">Gaming room</h2>
-        <p class="secondary" id="light-state">Loading…</p>
-        <div class="actions light-actions">
-          <button id="light-on" type="button">ON</button>
-          <button id="light-off" type="button" class="subtle">OFF</button>
-        </div>
-        <div class="range-row"><span>BRIGHTNESS</span><strong id="brightness-value">--%</strong></div>
-        <input type="range" id="brightness" min="1" max="100" step="1" value="25" aria-label="Light brightness">
-      </section>
-
       <section class="card scene-card">
-        <div class="card-top"><span class="card-label">PRESET / MOOD</span><span class="square-mark">◆</span></div>
+        <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
         <div class="ambient-orb"></div>
-        <h2>NEO-NOIR</h2>
-        <p class="secondary">Warm amber / evening scene</p>
-        <button class="accent full" id="scene-activate" type="button">ACTIVATE SCENE</button>
-        <p class="micro" id="scene-state">Saved in Home Assistant</p>
+        <h2>SCENES</h2>
+        <p class="secondary" id="scene-note">Loading…</p>
+        <div class="scene-buttons" id="scenes"></div>
+        <button type="button" id="lights-off" class="subtle full">ALL LIGHTS OFF</button>
+        <div id="light-list" class="light-list"></div>
       </section>
 
-      <section class="card vacuum-card">
+      <section class="card media-card">
+        <div class="card-top"><span class="card-label">NOW PLAYING / LIVING ROOM</span><span class="dot blue" id="media-dot"></span></div>
+        <img id="media-art" class="media-art is-hidden" alt="">
+        <h2 id="media-title">Loading…</h2>
+        <p class="secondary" id="media-sub"></p>
+        <p class="micro" id="media-meta"></p>
+        <div class="progress is-hidden" id="media-progress"><div class="progress-fill" id="media-progress-fill"></div></div>
+        <p class="micro" id="media-time"></p>
+      </section>
+
+      <section class="card wide vacuum-card is-hidden" id="vacuum-card">
         <div class="card-top"><span class="card-label">APARTMENT / CLEANING</span><span class="dot blue" id="vacuum-dot"></span></div>
-        <h2>DREAME L50S</h2>
-        <p class="secondary">Pro Ultra / Robot vacuum</p>
-        <div class="info-pair"><span>STATUS</span><strong id="vacuum-state">Loading…</strong></div>
-        <div class="info-pair"><span>BATTERY</span><strong id="vacuum-battery">--</strong></div>
-        <div class="actions vacuum-actions">
-          <button type="button" id="vacuum-start">START</button>
-          <button type="button" id="vacuum-pause" class="subtle">PAUSE</button>
-          <button type="button" id="vacuum-dock" class="subtle">DOCK</button>
+        <div class="col">
+          <h2 id="vacuum-name">VACUUM</h2>
+          <p class="secondary" id="vacuum-state">Loading…</p>
+          <div class="info-pair"><span>BATTERY</span><strong id="vacuum-battery">--</strong></div>
+          <p class="subhead">NEEDS ATTENTION</p>
+          <ul class="attention" id="vacuum-attention"></ul>
+          <div class="chips" id="vacuum-station"></div>
+        </div><div class="col">
+          <p class="subhead">LAST RUN</p>
+          <div id="vacuum-run"></div>
+          <p class="subhead">PARTS</p>
+          <div id="vacuum-parts"></div>
         </div>
-      </section>
-
-      <section class="card system-card">
-        <div class="card-top"><span class="card-label">SYSTEM / CONNECTIVITY</span><span class="square-mark teal">+</span></div>
-        <h2>HOME ASSISTANT</h2>
-        <p class="secondary">Zigbee2MQTT + local dashboard</p>
-        <div class="info-pair"><span>CONTROLLER</span><strong>SONOFF ZBDongle-P</strong></div>
-        <div class="info-pair"><span>SMART HOME API</span><strong id="ha-status">WAITING</strong></div>
-        <p class="future">NEXT MODULES: WLED · JELLYFIN · PROXMOX</p>
+        <div id="photo-section" class="photo-section is-hidden">
+          <p class="subhead">🐾 PET SPOTTED ON THE LAST RUN <span id="photo-count"></span></p>
+          <div class="photo-strip" id="photo-strip"></div>
+        </div>
       </section>
     </main>
 
     <footer><span>NIGHT CITY CONTROL // LOCAL NETWORK ONLY</span><span id="last-update">LAST SYNC --:--</span></footer>
+  </div>
+
+  <!-- Hidden via the is-hidden class: the CSP blocks inline style attributes. -->
+  <div class="viewer is-hidden" id="viewer">
+    <img id="viewer-img" alt="">
+    <p id="viewer-caption"></p>
   </div>
   <script src="/app.js"></script>
 </body>

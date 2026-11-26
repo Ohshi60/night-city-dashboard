@@ -15,22 +15,25 @@ npm start        # no .env loading; env must come from the environment (as in Do
 npm run check    # syntax check only (node --check on server, ha client, and frontend)
 ```
 
-There is no test suite, linter, or build step. To verify changes, run with `DEMO_MODE=true` (no HA token needed) and exercise `/api/health`, `/api/state`, and `POST /api/action` (needs the `X-Night-City: 1` header).
+There is no test suite, linter, or build step. To verify changes, run with `DEMO_MODE=true` (no HA token needed) and exercise `/api/health`, `/api/state`, and `POST /api/action` (needs the `X-Night-City: 1` header). Demo mode has no vacuum photos or artwork; checking those needs a live HA.
 
-Deployment: `docker compose up -d --build` (read-only container, port 3080). It is meant for a Linux VM/LXC inside Proxmox, not the Proxmox host itself.
+Deployment: production runs on Coolify (Dockerfile build pack, from `main`). Coolify does **not** deploy automatically on push, so trigger a deploy after merging. `docker compose up -d --build` also works for a plain Docker host.
 
 ## Architecture
 
-- **`src/ha.js`**: a thin `fetch` wrapper around the Home Assistant REST API (Bearer token, 8s timeout). The HA token lives only on the server and must never reach the browser.
-- **`src/server.js`** contains everything else:
-  - The static files are served from an explicit whitelist (`files` map), not a static-file plugin. Adding a frontend file means adding it there.
-  - An `onRequest` hook sets security headers (strict CSP: `default-src 'self'`, so no inline scripts or styles and no external resources). It blocks any POST that is cross-origin or lacks the `x-night-city: 1` header. That is the only CSRF protection; there is no auth.
-  - `GET /api/state` fetches all HA states once and reduces them to `light`/`scene`/`vacuum` summaries. A summary marks a missing or unavailable entity as `available: false` rather than erroring.
-  - `POST /api/action` accepts only the names in the `actions` map (`'action.name': [domain, service, entityKind]`), enforced by the JSON schema enum. Never expose arbitrary HA service calls. A new control needs an entry in `actions`, demo-mode handling of the `mock` object, and an entity env var in `entities`.
-  - **Demo mode** (`DEMO_MODE=true`): every endpoint short-circuits to the in-memory `mock` object, so the UI works with no HA connection. Keep demo and live paths in sync when changing response shapes.
-  - `GET /api/entities` lists light/scene/vacuum/sensor entities to help users find the IDs for `.env`.
-- **`public/app.js`**: must stay **ES5** (no `let`/`const`, arrow functions, `fetch`, promises, template literals, or classes). It uses `XMLHttpRequest`, polls `/api/state` every 8s (deliberately not WebSockets), and enables or disables controls from each entity's `available` flag.
+- **`src/ha.js`**: `fetch` wrappers around the Home Assistant API: `ha()` for JSON, `haBinary()` for images and gzipped map data. The HA token lives only on the server and must never reach the browser. Images (vacuum photos, media artwork) are proxied through the server for the same reason.
+- **`src/summaries.js`**: pure functions that turn HA states into card data (`lightsSummary`, `vacuumSummary`, `mediaSummary`, `parsePhotoList`). A missing or unavailable entity becomes `available: false`, not an error.
+  - Lights come from the `entity_id` lists of the shown scenes. HA has no "active scene", so the most recently activated scene counts as active while any light is on.
+  - The vacuum card relies on the Dreame integration's naming: `vacuum.<name>` implies `sensor.<name>_*`, `binary_sensor.<name>_maintenance`, `select.<name>_room_<id>_name` and `camera.<name>_map`.
+  - The last run's details live in the attributes of `sensor.<name>_cleaning_history`, not in the problem/error entities.
+  - Pet photos use the integration's `camera_history_map_proxy` (with `data=1`) and `camera_map_obstacle_history_proxy` endpoints, which no entity links to. Only the latest run is served, and only pets (type code 158) are shown.
+- **`src/mock.js`**: fake HA states for demo mode, plus `applyAction`, which applies the same `[domain, service, data]` calls that live mode sends to HA. The server runs the same summaries over mock and live states, so the response shapes can't drift apart.
+- **`src/server.js`**: routes and security.
+  - Static files are served from an explicit whitelist (`files` map), not a static-file plugin.
+  - An `onRequest` hook sets a strict CSP (`default-src 'self'`). This also blocks inline `style="…"` attributes in the HTML, so hide elements with the `is-hidden` CSS class, never with inline styles. It also blocks POSTs that are cross-origin or lack the `x-night-city: 1` header; that is the only CSRF protection, and there is no auth.
+  - `POST /api/action` accepts only `scene.activate` (scene must be one the dashboard shows) and `lights.off`. Never expose arbitrary HA service calls, or vacuum controls (the user removed them on purpose).
+- **`public/app.js`**: must stay **ES5** (no `let`/`const`, arrow functions, `fetch`, promises, template literals, or classes); `npm run check` greps for these. It uses `XMLHttpRequest` and polls `/api/state` every 8s (deliberately not WebSockets). It only rebuilds a card's DOM when that card's data changed, so taps aren't lost on the old iPad.
 
 ## Configuration
 
-All config is env vars (see `.env.example`): `DEMO_MODE`, `PORT`, `HA_URL`, `HA_TOKEN`, `LIGHT_ENTITY_ID`, `SCENE_ENTITY_ID`, `VACUUM_ENTITY_ID`, and the optional `VACUUM_BATTERY_ENTITY_ID`. There is no hardcoded fallback for `HA_URL`: it includes the port (this install's HA serves on port 80, not the default 8123). Outside demo mode the server exits at startup if `HA_URL` or `HA_TOKEN` is unset. In production these are set as Coolify environment variables, not in a committed file.
+All config is env vars (see `.env.example`): `DEMO_MODE`, `PORT`, `HA_URL`, `HA_TOKEN`, `VACUUM_ENTITY_ID`, and the optional `VACUUM_BATTERY_ENTITY_ID`, `SCENE_ENTITY_IDS` and `MEDIA_PLAYER_ENTITY_IDS` (comma-separated; empty means every scene or media player in HA). There is no hardcoded fallback for `HA_URL`: it includes the port (this install's HA serves on port 80, not the default 8123). Outside demo mode the server exits at startup if `HA_URL` or `HA_TOKEN` is unset. In production these are set as Coolify environment variables, not in a committed file.
