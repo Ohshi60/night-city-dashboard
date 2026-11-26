@@ -4,6 +4,15 @@
 // as over live data, and applies service calls to them, so demo and live always match in shape.
 
 const SCENE_BRIGHTNESS = { 'scene.neo_noir': 64, 'scene.night_city': 120, 'scene.work_light': 255 };
+// What the real scenes store (rgb, or ~4000 K white for the work light).
+const SCENE_RGB = { 'scene.neo_noir': [255, 140, 26], 'scene.night_city': [0, 110, 255], 'scene.work_light': [255, 206, 166] };
+
+function sceneColors() {
+  const hex = (rgb) => '#' + rgb.map((v) => ('0' + v.toString(16)).slice(-2)).join('');
+  const colors = {};
+  Object.keys(SCENE_RGB).forEach((id) => { colors[id] = hex(SCENE_RGB[id]); });
+  return colors;
+}
 
 function iso(minutesAgo) {
   return new Date(Date.now() - minutesAgo * 60000).toISOString();
@@ -56,7 +65,7 @@ function createStates(vacuumId) {
     state('scene.neo_noir', iso(40), { friendly_name: 'Neo-noir', entity_id: lights }),
     state('scene.night_city', iso(300), { friendly_name: 'Night city', entity_id: lights }),
     state('scene.work_light', iso(900), { friendly_name: 'Work light', entity_id: lights }),
-    state('light.kontoret_main', 'on', { friendly_name: 'Kontoret_main', brightness: 64 }),
+    state('light.kontoret_main', 'on', { friendly_name: 'Kontoret_main', brightness: 64, rgb_color: SCENE_RGB['scene.neo_noir'] }),
     state('light.kontoret_wled', 'unavailable', { friendly_name: 'WLED' }),
 
     state(vacuumId, 'docked', { friendly_name: 'Ottoto', battery_level: 80 }),
@@ -113,14 +122,15 @@ function applyAction(states, call) {
       if (light && light.state !== 'unavailable') {
         light.state = 'on';
         light.attributes.brightness = SCENE_BRIGHTNESS[scene.entity_id] || 128;
+        light.attributes.rgb_color = SCENE_RGB[scene.entity_id];
       }
     });
   } else if (domain === 'light' && service === 'turn_off') {
     ids.forEach((id) => {
       const light = byId(id);
-      if (light) { light.state = 'off'; delete light.attributes.brightness; }
+      if (light) { light.state = 'off'; delete light.attributes.brightness; delete light.attributes.rgb_color; }
     });
   }
 }
 
-module.exports = { createStates, applyAction, forecast };
+module.exports = { createStates, applyAction, forecast, sceneColors };

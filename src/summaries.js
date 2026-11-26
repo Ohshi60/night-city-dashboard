@@ -86,11 +86,60 @@ function entityMap(states) {
   return result;
 }
 
+// ---- Light colour → CSS hex (for the lights card glow and the scene dots) ------
+
+function toHex(rgb) {
+  return '#' + rgb.map((v) => ('0' + Math.round(Math.max(0, Math.min(255, v))).toString(16)).slice(-2)).join('');
+}
+function kelvinToRgb(kelvin) {
+  const t = kelvin / 100;
+  if (t <= 66) {
+    return [255, 99.4708025861 * Math.log(t) - 161.1195681661, t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307];
+  }
+  return [329.698727446 * Math.pow(t - 60, -0.1332047592), 288.1221695283 * Math.pow(t - 60, -0.0755148492), 255];
+}
+function xyToRgb(x, y) {
+  const X = x / y;
+  const Z = (1 - x - y) / y;
+  const gamma = (v) => (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+  const rgb = [X * 1.656492 - 0.354851 - Z * 0.255038, -X * 0.707196 + 1.655397 + Z * 0.036152, X * 0.051713 - 0.121364 + Z * 1.011530]
+    .map((v) => Math.max(0, gamma(v)));
+  const max = Math.max.apply(null, rgb) || 1;
+  return rgb.map((v) => v / max * 255);
+}
+function hsToRgb(h, s) {
+  const c = s / 100;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = 1 - c;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+}
+// Works for live light attributes and for the stored attributes in a scene's config.
+function colorOf(a) {
+  if (!a) return null;
+  if (Array.isArray(a.rgb_color)) return toHex(a.rgb_color);
+  if (Array.isArray(a.hs_color)) return toHex(hsToRgb(a.hs_color[0], a.hs_color[1]));
+  if (Array.isArray(a.xy_color)) return toHex(xyToRgb(a.xy_color[0], a.xy_color[1]));
+  const kelvin = a.color_temp_kelvin || (a.color_temp ? 1e6 / a.color_temp : null);
+  return kelvin ? toHex(kelvinToRgb(kelvin)) : null;
+}
+// A scene's colour: the first light it turns on that has a colour (from /api/config/scene/config/<id>).
+function sceneColor(config) {
+  const entities = (config && config.entities) || {};
+  for (const id of Object.keys(entities)) {
+    if (id.startsWith('light.') && entities[id].state === 'on') {
+      const color = colorOf(entities[id]);
+      if (color) return color;
+    }
+  }
+  return null;
+}
+
 // ---- Lights & scenes ------------------------------------------------------
 
 // Scenes come from SCENE_ENTITY_IDS when set, otherwise every scene in HA.
 // The lights shown are the ones those scenes control.
-function lightsSummary(map, configuredScenes) {
+function lightsSummary(map, configuredScenes, sceneColors) {
   const ids = configuredScenes.length
     ? configuredScenes
     : Object.keys(map).filter((id) => id.startsWith('scene.')).sort();
@@ -98,7 +147,11 @@ function lightsSummary(map, configuredScenes) {
   const scenes = ids.map((id) => {
     const s = map[id];
     const activated = s ? Date.parse(s.state) : NaN; // a scene's state is when it was last activated
-    return { id, name: friendly(s, id), available: Boolean(s) && s.state !== 'unavailable', lastActivated: isNaN(activated) ? null : activated };
+    return {
+      id, name: friendly(s, id), available: Boolean(s) && s.state !== 'unavailable',
+      lastActivated: isNaN(activated) ? null : activated,
+      color: (sceneColors && sceneColors[id]) || null
+    };
   });
 
   const lightIds = [];
@@ -112,7 +165,8 @@ function lightsSummary(map, configuredScenes) {
     const brightness = attr(s, 'brightness');
     return {
       id, name: friendly(s, id), available: isAvailable(s), on: isAvailable(s) && s.state === 'on',
-      brightness: typeof brightness === 'number' ? Math.round(brightness / 255 * 100) : null
+      brightness: typeof brightness === 'number' ? Math.round(brightness / 255 * 100) : null,
+      color: isAvailable(s) && s.state === 'on' ? colorOf(s.attributes) : null
     };
   });
 
@@ -389,4 +443,4 @@ function weatherSummary(map, weatherId, forecast, now) {
   };
 }
 
-module.exports = { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary };
+module.exports = { entityMap, colorOf, sceneColor, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary, weatherSummary };

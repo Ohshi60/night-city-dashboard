@@ -15,7 +15,7 @@
       <div>
         <p class="eyebrow">APARTMENT / CONTROL SYSTEM</p>
         <h1>NIGHT <span>CITY</span><b class="cursor">_</b></h1>
-        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.2</p>
+        <p class="tagline">HOME AUTOMATION / LOCAL CONTROL / v0.3</p>
       </div>
       <div class="topright">
         <div class="mode" id="mode">CONNECTING</div>
@@ -27,9 +27,9 @@
 
     <div class="section-heading"><span class="section-number">01</span> HOME <span class="line"></span></div>
     <main class="cards">
-      <section class="card scene-card">
+      <section class="card scene-card accent-amber">
         <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
-        <div class="ambient-orb"></div>
+        <div class="ambient-orb" id="light-orb"></div>
         <h2>SCENES</h2>
         <p class="secondary" id="scene-note">Loading…</p>
         <div class="scene-buttons" id="scenes"></div>
@@ -38,7 +38,7 @@
       </section>
 
       <div class="stack">
-      <section class="card media-card">
+      <section class="card media-card accent-magenta">
         <div class="card-top"><span class="card-label">NOW PLAYING / LIVING ROOM</span><span class="dot blue" id="media-dot"></span></div>
         <img id="media-art" class="media-art is-hidden" alt="">
         <h2 id="media-title">Loading…</h2>
@@ -48,9 +48,9 @@
         <p class="micro" id="media-time"></p>
       </section>
 
-      <section class="card weather-card is-hidden" id="weather-card">
+      <section class="card weather-card accent-cyan is-hidden" id="weather-card">
         <div class="card-top"><span class="card-label">OUTSIDE / TODAY</span><span class="dot blue active"></span></div>
-        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><h2 id="weather-temp">--</h2></div>
+        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><p class="big" id="weather-temp">--</p></div>
         <p class="secondary" id="weather-summary"></p>
         <p class="weather-line" id="weather-rain"></p>
         <p class="weather-line" id="weather-range"></p>
@@ -59,11 +59,11 @@
       </section>
       </div>
 
-      <section class="card wide energy-card is-hidden" id="energy-card">
+      <section class="card wide energy-card accent-violet is-hidden" id="energy-card">
         <div class="card-top"><span class="card-label">ELECTRICITY / PRICE PER kWh</span><span class="dot" id="energy-dot"></span></div>
         <div class="col">
-          <h2 id="energy-now">--</h2>
-          <p class="secondary" id="energy-level"></p>
+          <p class="big" id="energy-now">--</p>
+          <p class="level" id="energy-level"></p>
           <p class="subhead">BEST TIME TO START</p>
           <div id="energy-advice"></div>
           <p class="micro" id="energy-note"></p>
@@ -74,12 +74,13 @@
         </div>
       </section>
 
-      <section class="card wide vacuum-card is-hidden" id="vacuum-card">
+      <section class="card wide vacuum-card accent-teal is-hidden" id="vacuum-card">
         <div class="card-top"><span class="card-label">APARTMENT / CLEANING</span><span class="dot blue" id="vacuum-dot"></span></div>
         <div class="col">
-          <h2 id="vacuum-name">VACUUM</h2>
-          <p class="secondary" id="vacuum-state">Loading…</p>
-          <div class="info-pair"><span>BATTERY</span><strong id="vacuum-battery">--</strong></div>
+          <div class="vacuum-head">
+            <div><h2 id="vacuum-name">VACUUM</h2><p class="secondary" id="vacuum-state">Loading…</p></div>
+            <div class="battery"><p class="big" id="vacuum-battery">--</p><p class="micro">BATTERY</p></div>
+          </div>
           <p class="subhead">NEEDS ATTENTION</p>
           <ul class="attention" id="vacuum-attention"></ul>
           <div class="chips" id="vacuum-station"></div>
