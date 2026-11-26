@@ -152,6 +152,79 @@
     text('media-time', duration(m.duration - position) + ' left');
   }
 
+  // ---- Electricity ----------------------------------------------------------------
+
+  var LEVEL_TEXT = { cheap: 'Cheap right now', normal: 'Normal price right now', expensive: 'Expensive right now' };
+
+  function dayAndTime(ms) {
+    var d = new Date(ms);
+    var tomorrow = new Date(new Date().getTime() + 86400000);
+    if (d.toDateString() === new Date().toDateString()) return 'today ' + hm(d);
+    if (d.toDateString() === tomorrow.toDateString()) return 'tomorrow ' + hm(d);
+    return DAYS[d.getDay()] + ' ' + hm(d);
+  }
+  function kr(price, unit) { return price.toFixed(2) + ' ' + unit; }
+  function hoursText(minutes) {
+    var h = minutes / 60;
+    return (h === Math.round(h) ? h : h.toFixed(1)) + ' h';
+  }
+
+  function renderEnergy(e) {
+    var visible = Boolean(e && e.available);
+    show('energy-card', visible);
+    if (!visible || !changed('energy', e)) return;
+
+    text('energy-now', kr(e.current.price, e.unit));
+    text('energy-level', LEVEL_TEXT[e.current.level]);
+    el('energy-dot').className = 'dot' + (e.current.level === 'expensive' ? ' active' : '');
+
+    var advice = clear(el('energy-advice'));
+    e.appliances.forEach(function (a) {
+      var row = make('div', 'advice-row');
+      if (a.start === null) {
+        row.appendChild(make('strong', null, a.name + ': not enough prices yet'));
+      } else {
+        row.appendChild(make('strong', null, a.name + ': ' + (a.startsNow ? 'start now' : 'start ' + dayAndTime(a.start))));
+        var detail = hoursText(a.minutes) + ' program · avg ' + kr(a.average, e.unit);
+        if (!a.startsNow && a.savingsPct > 0) detail += ' · ' + a.savingsPct + '% cheaper than now';
+        row.appendChild(make('span', null, detail));
+      }
+      advice.appendChild(row);
+    });
+    text('energy-note', e.tomorrowAvailable ? '' : "Tomorrow's prices arrive around 13:00.");
+
+    // Bar chart: zero baseline, one hue; the current slot is brighter. Tap a bar for its price.
+    var chart = clear(el('energy-chart'));
+    var axis = clear(el('energy-axis'));
+    var max = 0;
+    e.slots.forEach(function (s) { if (s.price > max) max = s.price; });
+    var width = 100 / e.slots.length;
+    var selected = null;
+    e.slots.forEach(function (s, i) {
+      var start = new Date(s.start);
+      var col = make('div', 'chart-col' + (i === 0 ? ' now' : '') + (i > 0 && start.getHours() === 0 && start.getMinutes() === 0 ? ' midnight' : ''));
+      col.style.width = width + '%';
+      var bar = make('div', 'chart-bar');
+      bar.style.height = Math.max(2, s.price / max * 100) + '%';
+      col.appendChild(bar);
+      col.onclick = function () {
+        if (selected) selected.className = selected.className.replace(' picked', '');
+        selected = col;
+        col.className += ' picked';
+        var end = new Date(s.start + e.slotMinutes * 60000);
+        text('energy-readout', dayAndTime(s.start) + '–' + hm(end) + ' · ' + kr(s.price, e.unit) + ' · ' + s.level);
+      };
+      chart.appendChild(col);
+
+      if (i === 0 || (start.getMinutes() === 0 && start.getHours() % 6 === 0)) {
+        var label = make('span', null, i === 0 ? 'Now' : start.getHours() === 0 ? 'Tomorrow' : pad(start.getHours()));
+        label.style.left = (i * width) + '%';
+        axis.appendChild(label);
+      }
+    });
+    text('energy-readout', 'Tap a bar to see its price.');
+  }
+
   // ---- Vacuum -----------------------------------------------------------------
 
   function renderVacuum(v) {
@@ -248,6 +321,7 @@
     }
     renderLights(state.lights);
     renderMedia(state.media);
+    renderEnergy(state.energy);
     renderVacuum(state.vacuum);
     text('last-update', 'LAST SYNC ' + hm(new Date()));
   }

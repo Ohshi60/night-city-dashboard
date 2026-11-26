@@ -268,4 +268,58 @@ function mediaSummary(map, configuredPlayers) {
   };
 }
 
-module.exports = { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary };
+// ---- Electricity prices (Energi Data Service integration) -------------------
+
+// Prices are per slot (hourly today; the code also copes with 15-minute slots).
+// raw_today / raw_tomorrow: [{ hour: ISO time, price: kr/kWh incl. tariffs and VAT }].
+function energySummary(map, priceId, appliances, now) {
+  const s = map[priceId];
+  if (!isAvailable(s)) return { available: false };
+  const a = s.attributes || {};
+  const all = [].concat(a.raw_today || [], a.tomorrow_valid ? a.raw_tomorrow || [] : [])
+    .map((p) => ({ start: Date.parse(p.hour), price: Number(p.price) }))
+    .filter((p) => !isNaN(p.start) && !isNaN(p.price))
+    .sort((x, y) => x.start - y.start);
+  const slotMs = all.length > 1 ? all[1].start - all[0].start : 3600000;
+  const slots = all.filter((p) => p.start + slotMs > now); // the current slot onwards
+  if (!slots.length) return { available: false };
+
+  // "Cheap" and "expensive" are relative to the prices still ahead (bottom and top third).
+  const sorted = slots.map((p) => p.price).sort((x, y) => x - y);
+  const low = sorted[Math.floor((sorted.length - 1) / 3)];
+  const high = sorted[Math.ceil((sorted.length - 1) * 2 / 3)];
+  const level = (price) => (price <= low ? 'cheap' : price >= high ? 'expensive' : 'normal');
+  const average = (from, count) => slots.slice(from, from + count).reduce((sum, p) => sum + p.price, 0) / count;
+  const round = (n) => Math.round(n * 100) / 100;
+
+  const advice = appliances.map(({ name, minutes }) => {
+    const count = Math.max(1, Math.ceil(minutes * 60000 / slotMs));
+    let best = -1;
+    let bestAverage = Infinity;
+    for (let i = 0; i + count <= slots.length; i++) {
+      const avg = average(i, count);
+      if (avg < bestAverage - 1e-9) { best = i; bestAverage = avg; } // ties keep the earliest start
+    }
+    if (best < 0) return { name, minutes, start: null };
+    const nowAverage = average(0, count);
+    return {
+      name, minutes,
+      start: slots[best].start,
+      startsNow: best === 0,
+      average: round(bestAverage),
+      savingsPct: nowAverage > 0 ? Math.round((nowAverage - bestAverage) / nowAverage * 100) : 0
+    };
+  });
+
+  return {
+    available: true,
+    unit: (a.currency === 'DKK' || !a.currency ? 'kr' : a.currency) + '/' + (a.unit || 'kWh'),
+    current: { price: round(slots[0].price), level: level(slots[0].price) },
+    slotMinutes: Math.round(slotMs / 60000),
+    slots: slots.map((p) => ({ start: p.start, price: round(p.price), level: level(p.price) })),
+    tomorrowAvailable: Boolean(a.tomorrow_valid),
+    appliances: advice
+  };
+}
+
+module.exports = { entityMap, lightsSummary, vacuumSummary, vacuumBase, parsePhotoList, mediaSummary, energySummary };

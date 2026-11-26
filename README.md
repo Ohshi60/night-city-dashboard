@@ -7,6 +7,7 @@ Lightweight Fastify backend + ES5 frontend intended for Safari on a **first-gene
 - Office lighting as a scene picker: every Home Assistant scene (or the ones in `SCENE_ENTITY_IDS`), the lights those scenes control with their on/off/offline state, and an "all lights off" button
 - Dreame vacuum status (read-only): state, battery, plain-language "needs attention" items, base-station parts, the last run (finished or not, skipped rooms and why, rooms that keep getting skipped), consumable wear, and pet photos from the last run
 - Now playing: the most active media player. Plex and Jellyfin integrations provide title, poster and progress; Android TV Remote only provides the open app (e.g. "Prime Video")
+- Electricity prices: the current price per kWh (incl. tariffs and VAT), a bar chart of the coming hours, and the cheapest time to start each appliance in `APPLIANCES`. Needs the [Energi Data Service](https://github.com/MTrab/energidataservice) custom integration in Home Assistant (installed manually into `/config/custom_components/energidataservice/`); the card stays hidden without it
 - Offline demo mode to verify layout on an older browser
 - Server-side Home Assistant token, never returned to the browser
 - Docker deployment on a Linux VM/LXC **inside Proxmox** (do not install Docker directly on the Proxmox hypervisor)
@@ -55,4 +56,4 @@ curl http://localhost:3080/api/entities
 - Home Assistant integration calls go through Fastify on the server. The browser doesn't receive HA credentials.
 - No arbitrary HA service calls are exposed. Only a small list of permitted actions is mapped by the server.
 - Commands are submitted over HTTP on LAN. No login exists in MVP. Use a separate HA account for the dashboard token if you want to manage permissions separately, though Home Assistant service access should still be considered powerful.
-- Next upgrades: Danish electricity prices with the best times for laundry and dishwashing, weekday commute traffic, and a layout pass once those cards exist.
+- Next upgrades: weather and sunset, weekday commute traffic, and a layout pass once those cards exist.
