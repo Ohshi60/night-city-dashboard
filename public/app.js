@@ -130,19 +130,18 @@
 
   function renderMedia(m) {
     media = m;
-    el('media-dot').className = 'dot blue' + (m.active ? ' active' : '');
+    // The bar only exists while something is on; nothing to show otherwise.
+    show('media-bar', m.active);
     var art = el('media-art');
     if (!m.active) {
-      text('media-title', 'Nothing playing');
-      text('media-sub', 'The TV is off');
-      text('media-meta', '');
-      text('media-device', '');
       show('media-art', false);
       renderProgress();
       return;
     }
     var stateName = m.state === 'playing' ? 'Playing' : m.state === 'paused' ? 'Paused' : 'On';
-    text('media-title', m.title || m.app || 'TV is on');
+    var headline = m.title || m.app || 'TV is on';
+    text('media-title', headline);
+    text('media-big-title', headline);
     text('media-sub', m.title ? (m.subtitle || '') : (m.app ? 'App open' : ''));
     text('media-meta', (m.title && m.app ? m.app + ' · ' : '') + stateName + ' · ' + m.device);
     text('media-device', 'On ' + m.device);
@@ -180,7 +179,7 @@
 
   function renderWeather(w) {
     var visible = Boolean(w && w.available);
-    show('weather-card', visible);
+    show('weather-chip', visible);
     if (!visible || !changed('weather', w)) return;
 
     text('weather-icon', w.icon);
@@ -200,6 +199,14 @@
     if (w.sunUp && w.sunset) sun = 'Sun sets ' + hm(new Date(w.sunset));
     else if (!w.sunUp && w.sunrise) sun = 'Sun rises ' + dayAndTime(w.sunrise);
     text('weather-sun', sun);
+
+    // Header chip: the one thing worth knowing (rain if any, else the sky) plus the next sun event.
+    var short = w.condition;
+    if (w.rain && w.rain.from === null) short = 'Raining' + (w.rain.to !== null ? ' until ' + hm(new Date(w.rain.to)) : '');
+    else if (w.rain) short = 'Rain from ' + hm(new Date(w.rain.from));
+    if (w.sunUp && w.sunset) short += ' · sunset ' + hm(new Date(w.sunset));
+    else if (!w.sunUp && w.sunrise) short += ' · sunrise ' + hm(new Date(w.sunrise));
+    text('weather-short', short);
 
     var hours = clear(el('weather-hours'));
     w.hours.forEach(function (h) {
@@ -246,9 +253,10 @@
       if (a.start === null) {
         row.appendChild(make('strong', null, a.name + ': not enough prices yet'));
       } else {
-        row.appendChild(make('strong', null, a.name + ': ' + (a.startsNow ? 'start now' : 'start ' + dayAndTime(a.start))));
-        var detail = hoursText(a.minutes) + ' program · avg ' + kr(a.average, e.unit);
-        if (!a.startsNow && a.savingsPct > 0) detail += ' · ' + a.savingsPct + '% cheaper than now';
+        // Short enough for one line each on the overview card.
+        row.appendChild(make('strong', null, a.name + ' · ' + (a.startsNow ? 'start now' : dayAndTime(a.start))));
+        var detail = hoursText(a.minutes) + ' · avg ' + kr(a.average, e.unit);
+        if (!a.startsNow && a.savingsPct > 0) detail += ' · ' + a.savingsPct + '% cheaper';
         row.appendChild(make('span', null, detail));
       }
       advice.appendChild(row);
@@ -262,6 +270,9 @@
     e.slots.forEach(function (s) { if (s.price > max) max = s.price; });
     var width = 100 / e.slots.length;
     var selected = null;
+    // Hour labels every 6 h for one day of prices, every 12 h for two; never closer than 3 slots.
+    var step = e.slots.length > 30 * (60 / e.slotMinutes) ? 12 : 6;
+    var lastLabel = -100;
     e.slots.forEach(function (s, i) {
       var start = new Date(s.start);
       var col = make('div', 'chart-col' + (i === 0 ? ' now' : '') + (i > 0 && start.getHours() === 0 && start.getMinutes() === 0 ? ' midnight' : ''));
@@ -278,10 +289,12 @@
       };
       chart.appendChild(col);
 
-      if (i === 0 || (start.getMinutes() === 0 && start.getHours() % 6 === 0)) {
+      var due = i === 0 || (start.getMinutes() === 0 && start.getHours() % step === 0);
+      if (due && i - lastLabel >= 3 * (60 / e.slotMinutes)) {
         var label = make('span', null, i === 0 ? 'Now' : start.getHours() === 0 ? 'Tomorrow' : pad(start.getHours()));
         label.style.left = (i * width) + '%';
         axis.appendChild(label);
+        lastLabel = i;
       }
     });
     text('energy-readout', 'Tap a bar to see its price.');
@@ -345,12 +358,19 @@
 
   function loadPhotos(runKey) {
     request('GET', '/api/vacuum/photos?nocache=' + new Date().getTime(), null, function (err, data) {
-      if (err) { show('photo-section', false); return; } // retried on the next poll
+      if (err) { show('photo-section', false); show('vacuum-pet', false); return; } // retried on the next poll
       photoRun = runKey;
       var strip = clear(el('photo-strip'));
       show('photo-section', data.photos.length > 0);
-      show('vacuum-pets', data.photos.length > 0);
-      text('vacuum-pets', '🐾 Pet spotted on the last run');
+
+      // The first pet photo is shown right on the card; the rest are in the details.
+      var first = data.photos[0];
+      show('vacuum-pet', Boolean(first));
+      if (first) {
+        var firstSrc = '/api/vacuum/photos/' + first.index + '?v=' + encodeURIComponent(data.version);
+        el('vacuum-pet-img').src = firstSrc;
+        el('vacuum-pet').onclick = function () { openViewer(firstSrc, first.room || 'Pet'); };
+      }
       text('photo-count', data.photos.length + (data.photos.length === 1 ? ' PHOTO' : ' PHOTOS'));
       data.photos.forEach(function (p) {
         var src = '/api/vacuum/photos/' + p.index + '?v=' + encodeURIComponent(data.version);
@@ -463,15 +483,7 @@
   function summary(state) {
     var h = new Date().getHours();
     var parts = [h >= 5 && h < 11 ? 'Good morning' : h >= 11 && h < 17 ? 'Good afternoon' : h >= 17 && h < 23 ? 'Good evening' : 'Good night'];
-    var w = state.weather;
-    if (w && w.available && w.temperature !== null) {
-      var weather = degrees(w.temperature);
-      if (w.rain && w.rain.from === null) weather += ', raining' + (w.rain.to !== null ? ' until ' + hm(new Date(w.rain.to)) : '');
-      else if (w.rain) weather += ', rain from ' + hm(new Date(w.rain.from));
-      else if (w.outlookHours) weather += ' and dry';
-      else weather += ' and ' + w.condition.toLowerCase();
-      parts.push(weather);
-    }
+    // Weather is left out: the header chip already shows it.
     if (state.energy && state.energy.available) parts.push(powerPhrase(state.energy));
     var v = state.vacuum;
     if (v && v.attention.length) parts.push(v.name + ': ' + v.attention[0].charAt(0).toLowerCase() + v.attention[0].slice(1));

@@ -11,10 +11,25 @@
 </head>
 <body>
   <div class="app">
+    <!-- Weather lives in the header like the clock: a glance, with the forecast one tap away. -->
     <header class="topbar">
-      <div>
+      <div class="brand">
         <h1>NIGHT <span>CITY</span><b class="cursor">_</b></h1>
-        <p class="tagline">APARTMENT CONTROL / v0.4</p>
+        <p class="tagline">APARTMENT CONTROL / v0.5</p>
+      </div>
+      <div class="weather-cell">
+        <div class="weather-chip is-hidden" id="weather-chip" data-detail="weather-detail" data-title="OUTSIDE / TODAY">
+          <span class="weather-icon" id="weather-icon"></span><span class="chip-temp" id="weather-temp">--</span>
+          <span class="chip-text" id="weather-short"></span>
+          <div class="detail is-hidden" id="weather-detail">
+            <p class="weather-line" id="weather-summary"></p>
+            <p class="weather-line" id="weather-rain"></p>
+            <p class="weather-line" id="weather-range"></p>
+            <p class="weather-line" id="weather-sun"></p>
+            <p class="subhead">NEXT HOURS</p>
+            <div class="hours" id="weather-hours"></div>
+          </div>
+        </div>
       </div>
       <div class="topright">
         <div class="clock" id="clock">--:--</div>
@@ -24,93 +39,81 @@
 
     <div class="statusbar" id="statusbar">Connecting to Home Assistant…</div>
 
-    <!-- Overview: every card fits on one iPad screen. Tapping a card (outside its buttons) opens
+    <!-- Only shown while something is playing. -->
+    <div class="nowbar is-hidden" id="media-bar" data-detail="media-detail" data-title="NOW PLAYING / LIVING ROOM">
+      <span class="now-icon">▶</span><strong id="media-title"></strong><span class="now-meta" id="media-meta"></span>
+      <span class="now-more">DETAILS ›</span>
+      <div class="progress is-hidden" id="media-progress"><div class="progress-fill" id="media-progress-fill"></div></div>
+      <div class="detail is-hidden" id="media-detail">
+        <img id="media-art" class="media-art is-hidden" alt="">
+        <h2 id="media-big-title"></h2>
+        <p class="weather-line" id="media-sub"></p>
+        <p class="weather-line" id="media-time"></p>
+        <p class="micro" id="media-device"></p>
+      </div>
+    </div>
+
+    <!-- Overview: fits one iPad screen. Tapping a [data-detail] card (outside its buttons) opens
          its details in the sheet; the .detail block is moved there while open and moved back after. -->
     <main class="cards">
-      <section class="card third scene-card accent-amber" data-detail="lights-detail" data-title="LIGHTING / KONTOR">
+      <section class="card side scene-card accent-amber">
         <div class="card-top"><span class="card-label">LIGHTING / KONTOR</span><span class="dot" id="light-dot"></span></div>
         <div class="ambient-orb" id="light-orb"></div>
         <h2>SCENES</h2>
         <p class="secondary" id="scene-note">Loading…</p>
         <div class="scene-buttons" id="scenes"></div>
         <button type="button" id="lights-off" class="subtle full">ALL LIGHTS OFF</button>
-        <p class="more">LIGHTS ›</p>
-        <div class="detail is-hidden" id="lights-detail">
-          <p class="subhead">LIGHTS</p>
-          <div id="light-list" class="light-list"></div>
-        </div>
-      </section>
-
-      <section class="card third weather-card accent-cyan is-hidden" id="weather-card" data-detail="weather-detail" data-title="OUTSIDE / TODAY">
-        <div class="card-top"><span class="card-label">OUTSIDE / TODAY</span><span class="dot active"></span></div>
-        <div class="weather-now"><span class="weather-icon" id="weather-icon"></span><p class="big" id="weather-temp">--</p></div>
-        <p class="secondary" id="weather-summary"></p>
-        <p class="weather-line" id="weather-rain"></p>
-        <p class="weather-line" id="weather-sun"></p>
-        <p class="more">DETAILS ›</p>
-        <div class="detail is-hidden" id="weather-detail">
-          <p class="weather-line" id="weather-range"></p>
-          <p class="subhead">NEXT HOURS</p>
-          <div class="hours" id="weather-hours"></div>
-        </div>
-      </section>
-
-      <section class="card third media-card accent-magenta" data-detail="media-detail" data-title="NOW PLAYING / LIVING ROOM">
-        <div class="card-top"><span class="card-label">NOW PLAYING</span><span class="dot" id="media-dot"></span></div>
-        <h2 id="media-title">Loading…</h2>
-        <p class="secondary" id="media-sub"></p>
-        <p class="micro" id="media-meta"></p>
-        <div class="progress is-hidden" id="media-progress"><div class="progress-fill" id="media-progress-fill"></div></div>
-        <p class="more">DETAILS ›</p>
-        <div class="detail is-hidden" id="media-detail">
-          <img id="media-art" class="media-art is-hidden" alt="">
-          <p class="weather-line" id="media-time"></p>
-          <p class="micro" id="media-device"></p>
-        </div>
-      </section>
-
-      <section class="card half energy-card accent-violet is-hidden" id="energy-card" data-detail="energy-detail" data-title="ELECTRICITY / PRICE PER kWh">
-        <div class="card-top"><span class="card-label">ELECTRICITY</span><span class="dot" id="energy-dot"></span></div>
-        <div class="price-head">
-          <p class="big" id="energy-now">--</p>
-          <p class="level" id="energy-level"></p>
-        </div>
-        <div id="energy-advice"></div>
-        <p class="more">PRICE CHART ›</p>
-        <div class="detail is-hidden" id="energy-detail">
-          <div class="chart" id="energy-chart" role="img" aria-label="Electricity price for the coming hours"></div>
-          <div class="chart-axis" id="energy-axis"></div>
-          <p class="micro" id="energy-readout">Tap a bar to see its price.</p>
-          <p class="micro" id="energy-note"></p>
-        </div>
-      </section>
-
-      <section class="card half vacuum-card accent-teal is-hidden" id="vacuum-card" data-detail="vacuum-detail" data-title="APARTMENT / CLEANING">
-        <div class="card-top"><span class="card-label">CLEANING</span><span class="dot" id="vacuum-dot"></span></div>
-        <div class="vacuum-head">
-          <div><h2 id="vacuum-name">VACUUM</h2><p class="secondary" id="vacuum-state">Loading…</p></div>
-          <div class="battery"><p class="big" id="vacuum-battery">--</p><p class="micro">BATTERY</p></div>
-        </div>
-        <ul class="attention" id="vacuum-attention"></ul>
-        <p class="weather-line" id="vacuum-run-short"></p>
-        <p class="weather-line is-hidden" id="vacuum-pets"></p>
-        <p class="more">DETAILS ›</p>
-        <div class="detail is-hidden" id="vacuum-detail">
+        <p class="subhead">LIGHTS</p>
+        <div id="light-list" class="light-list"></div>
+      </section><div class="main-col">
+        <section class="card energy-card accent-violet is-hidden" id="energy-card">
+          <div class="card-top"><span class="card-label">ELECTRICITY</span><span class="dot" id="energy-dot"></span></div>
           <div class="col">
-            <p class="subhead">LAST RUN</p>
-            <div id="vacuum-run"></div>
-            <p class="subhead">BASE STATION</p>
-            <div class="chips" id="vacuum-station"></div>
+            <div class="price-head">
+              <p class="big" id="energy-now">--</p>
+              <p class="level" id="energy-level"></p>
+            </div>
+            <div id="energy-advice"></div>
+            <p class="micro" id="energy-note"></p>
           </div><div class="col">
-            <p class="subhead">PARTS</p>
-            <div id="vacuum-parts"></div>
+            <div class="chart" id="energy-chart" role="img" aria-label="Electricity price for the coming hours"></div>
+            <div class="chart-axis" id="energy-axis"></div>
+            <p class="micro" id="energy-readout">Tap a bar to see its price.</p>
           </div>
-          <div id="photo-section" class="photo-section is-hidden">
-            <p class="subhead">🐾 PET SPOTTED ON THE LAST RUN <span id="photo-count"></span></p>
-            <div class="photo-strip" id="photo-strip"></div>
+        </section>
+
+        <section class="card vacuum-card accent-teal is-hidden" id="vacuum-card" data-detail="vacuum-detail" data-title="APARTMENT / CLEANING">
+          <div class="card-top"><span class="card-label">CLEANING</span><span class="dot" id="vacuum-dot"></span></div>
+          <div class="col">
+            <div class="vacuum-head">
+              <div><h2 id="vacuum-name">VACUUM</h2><p class="secondary" id="vacuum-state">Loading…</p></div>
+              <div class="battery"><p class="big" id="vacuum-battery">--</p><p class="micro">BATTERY</p></div>
+            </div>
+            <ul class="attention" id="vacuum-attention"></ul>
+            <p class="weather-line" id="vacuum-run-short"></p>
+          </div><div class="col">
+            <div class="chips" id="vacuum-station"></div>
+            <button type="button" class="photo pet-thumb is-hidden" id="vacuum-pet">
+              <img id="vacuum-pet-img" alt="Pet spotted by the vacuum">
+              <span>🐾 Pet spotted</span>
+            </button>
           </div>
-        </div>
-      </section>
+          <p class="more">DETAILS ›</p>
+          <div class="detail is-hidden" id="vacuum-detail">
+            <div class="col">
+              <p class="subhead">LAST RUN</p>
+              <div id="vacuum-run"></div>
+            </div><div class="col">
+              <p class="subhead">PARTS</p>
+              <div id="vacuum-parts"></div>
+            </div>
+            <div id="photo-section" class="photo-section is-hidden">
+              <p class="subhead">🐾 PET SPOTTED ON THE LAST RUN <span id="photo-count"></span></p>
+              <div class="photo-strip" id="photo-strip"></div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
 
     <footer><span>NIGHT CITY CONTROL // LOCAL NETWORK ONLY</span><span id="last-update">LAST SYNC --:--</span></footer>

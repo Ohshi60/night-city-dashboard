@@ -21,7 +21,23 @@ body {
 /* Header: compact so the overview fits one iPad screen (about 1024×690 in Safari). */
 .topbar { display: table; width: 100%; margin-bottom: 8px; }
 .topbar > div { display: table-cell; vertical-align: middle; }
+.brand { width: 260px; }
 .topright { text-align: right; width: 200px; }
+
+/* Weather chip in the header */
+.weather-cell { text-align: center; }
+.weather-chip { display: inline-block; padding: 6px 16px 6px 12px; border: 1px solid #2b5664; border-radius: 22px; background: rgba(17,23,37,.8); cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(79,212,240,.15); }
+.weather-chip > span { vertical-align: middle; }
+.weather-chip .weather-icon { font-size: 22px; padding-right: 8px; }
+.chip-temp { font-size: 24px; font-weight: 300; margin-right: 10px; }
+.chip-text { font-size: 13px; color: #bfe9f5; }
+
+/* Now playing: a slim bar, only while something is on */
+.nowbar { position: relative; margin: 0 0 12px; padding: 9px 120px 10px 14px; background: rgba(17,23,37,.94); border: 1px solid #263147; border-left: 3px solid #ff5fc8; border-radius: 8px; font-size: 14px; cursor: pointer; white-space: nowrap; overflow: hidden; }
+.now-icon { color: #ff5fc8; margin-right: 10px; }
+.now-meta { color: #9fb0c3; margin-left: 10px; font-size: 13px; }
+.now-more { position: absolute; right: 16px; top: 12px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #6f7f96; }
+.nowbar .progress { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; height: 3px; border-radius: 0; }
 .topright .clock { display: inline-block; vertical-align: middle; margin: 0 12px 0 0; }
 .topright .mode { vertical-align: middle; }
 h1 { font-size: 32px; letter-spacing: 3px; line-height: 1; font-weight: 800; margin: 0 0 4px; text-shadow: 0 0 18px rgba(255,95,200,.35); }
@@ -46,8 +62,13 @@ h1 span { color: #f5a65b; text-shadow: 0 0 16px rgba(245,166,91,.55); }
   border: 1px solid #263147; border-top: 2px solid #3b4a66; border-radius: 10px; font-size: 14px; overflow: hidden;
 }
 .card.wide { width: 97%; width: calc(100% - 14px); }
-.card.third { width: 31%; width: calc(33.33% - 14px); height: 332px; min-height: 0; padding-top: 16px; }
-.card.half { width: 48%; width: calc(50% - 14px); height: 214px; min-height: 0; padding-top: 16px; }
+/* Grid: lights on the left, electricity and vacuum stacked on the right. Heights are fixed so the
+   overview fits one iPad screen even when the now-playing bar is showing. */
+.card.side { width: 31%; width: calc(33.33% - 14px); height: 478px; min-height: 0; padding-top: 16px; }
+.main-col { display: inline-block; vertical-align: top; width: 66.66%; }
+.main-col .card { display: block; width: auto; min-height: 0; padding-top: 16px; }
+.main-col .energy-card { height: 250px; }
+.main-col .vacuum-card { height: 214px; }
 .card[data-detail] { cursor: pointer; }
 .card-top { display: table; width: 100%; margin-bottom: 10px; }
 /* "DETAILS ›" hint, bottom right of every tappable card. */
@@ -147,7 +168,7 @@ button.full { width: 100%; }
 .advice-row { padding: 6px 0; border-top: 1px solid #263147; }
 .advice-row strong { display: block; font-size: 15px; color: #eef2f8; }
 .advice-row span { display: block; font-size: 12px; color: #9fb0c3; }
-.chart { position: relative; height: 220px; margin-top: 10px; font-size: 0; white-space: nowrap; border-bottom: 1px solid #33415a; }
+.chart { position: relative; height: 150px; margin-top: 4px; font-size: 0; white-space: nowrap; border-bottom: 1px solid #33415a; }
 .chart-col { position: relative; display: inline-block; vertical-align: bottom; height: 100%; padding: 0 1px; cursor: pointer; }
 .chart-col.midnight { border-left: 1px dashed #46557a; }
 .chart-bar { position: absolute; left: 1px; right: 1px; bottom: 0; background: #6a57b8; border-radius: 4px 4px 0 0; }
@@ -180,6 +201,9 @@ button.full { width: 100%; }
 .photo-strip { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 6px; }
 .photo { display: inline-block; vertical-align: top; width: 150px; min-height: 0; margin-right: 8px; padding: 0; background: #0b101b; border: 1px solid #33415a; border-radius: 6px; overflow: hidden; text-align: left; letter-spacing: 0; font-weight: normal; }
 .photo img { display: block; width: 150px; height: 112px; }
+.pet-thumb { position: relative; display: block; width: 128px; margin-top: 4px; }
+.pet-thumb img { width: 128px; height: 96px; }
+.pet-thumb span { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; font-size: 10px; background: rgba(5,8,14,.75); }
 .photo span { display: block; padding: 5px 7px; font-size: 11px; color: #c9d2dd; white-space: normal; }
 
 .viewer { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 10; background: rgba(5,8,14,.94); text-align: center; padding: 40px 16px; }
@@ -196,7 +220,10 @@ body.night { background-image: none; background-color: #040509; color: #c9b9a6; 
 .night h1 span, .night .section-number { color: #a8794e; }
 .night .clock, .night .statusbar, .night .advice-row strong, .night .weather-line, .night .info-pair strong, .night .big { color: #c9b9a6; }
 .night .secondary, .night .micro, .night .card-label, .night .hour, .night .advice-row span, .night .run-line { color: #8c7f71 !important; }
-.night .card, .night .sheet { background: #0a0c12; border-color: #1a1e29; box-shadow: none; }
+.night .card, .night .sheet, .night .nowbar, .night .weather-chip { background: #0a0c12; border-color: #1a1e29; box-shadow: none; }
+.night .chip-text, .night .now-meta { color: #8c7f71; }
+.night .now-icon { color: #8c6a7e; }
+.night .nowbar { border-left-color: #4a3b44; }
 .night .more { color: #4f4840; }
 .night .accent-amber, .night .accent-magenta, .night .accent-cyan, .night .accent-violet, .night .accent-teal { border-top-color: #4a3b2e; }
 .night .dot.active { box-shadow: none !important; }
@@ -219,7 +246,12 @@ body.night { background-image: none; background-color: #040509; color: #c9b9a6; 
   .tagline { letter-spacing: 1px; }
   .topright { width: 100px; }
   .clock { font-size: 22px; }
-  .card, .card.wide, .card.third, .card.half { display: block; width: auto; height: auto; min-height: 0; margin-bottom: 13px; padding-bottom: 34px; }
+  .card, .card.wide, .card.side, .main-col .card { display: block; width: auto; height: auto; min-height: 0; margin-bottom: 13px; padding-bottom: 34px; }
+  .main-col { display: block; width: auto; }
+  .topbar, .topbar > div { display: block; width: auto; text-align: left; }
+  .weather-cell { margin: 8px 0; }
+  .nowbar { padding-right: 14px; }
+  .now-more { display: none; }
   .col, .col + .col { display: block; width: auto; padding: 0; border: 0; }
   .sheet-backdrop { padding: 12px 8px; }
   .sheet { padding: 14px 14px 18px; }
