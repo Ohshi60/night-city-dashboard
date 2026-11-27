@@ -6,8 +6,8 @@ Lightweight Fastify backend + ES5 frontend intended for Safari on a **first-gene
 
 - Office lighting as a scene picker: every Home Assistant scene (or the ones in `SCENE_ENTITY_IDS`), the lights those scenes control with their on/off/offline state, and an "all lights off" button
 - Dreame vacuum status (read-only): state, battery, plain-language "needs attention" items, base-station parts, the last run (finished or not, skipped rooms and why, rooms that keep getting skipped), consumable wear, and pet photos from the last run
-- Now playing: the most active media player. Plex and Jellyfin integrations provide title, poster and progress; Android TV Remote only provides the open app (e.g. "Prime Video")
-- Weather: current temperature, conditions and wind (m/s), rain in the next 12 hours in plain words, the temperature range, the next sunrise or sunset, and the next six hours. Uses `WEATHER_ENTITY_ID` (default `weather.home`, met.no) and `sun.sun`
+- Now playing (a slim bar, only shown while something is on): the most active media player. Plex and Jellyfin integrations provide title, poster and progress; Android TV Remote only provides the open app (e.g. "Prime Video")
+- Weather (a chip in the header; tap for the forecast): current temperature, conditions and wind (m/s), rain in the next 12 hours in plain words, the temperature range, the next sunrise or sunset, and the next six hours. Uses `WEATHER_ENTITY_ID` (default `weather.home`, met.no) and `sun.sun`
 - Electricity prices: the current price per kWh (incl. tariffs and VAT), a bar chart of the coming hours, and the cheapest time to start each appliance in `APPLIANCES`. Needs the [Energi Data Service](https://github.com/MTrab/energidataservice) custom integration in Home Assistant (installed manually into `/config/custom_components/energidataservice/`); the card stays hidden without it
 - Offline demo mode to verify layout on an older browser
 - Server-side Home Assistant token, never returned to the browser
@@ -59,4 +59,3 @@ curl http://localhost:3080/api/entities
 - Commands are submitted over HTTP on LAN. No login exists in MVP. Use a separate HA account for the dashboard token if you want to manage permissions separately, though Home Assistant service access should still be considered powerful.
 - The overview is sized to fit one first-gen iPad mini screen in landscape (about 1024×690 in Safari). Tapping a card opens its details in a panel that closes itself after a minute.
 - From sunset to sunrise the page switches to a dim, warm night mode. Add `?theme=day` or `?theme=night` to the URL to force one.
-- Next upgrades: weekday commute traffic.
